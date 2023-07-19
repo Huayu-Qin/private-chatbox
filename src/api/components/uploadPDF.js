@@ -4,7 +4,7 @@ import { CharacterTextSplitter } from "langchain/text_splitter";
 import storePinecone from "./storePinecone.js";
 import { TokenTextSplitter } from "langchain/text_splitter";
 
-export default async function uploadPDF(path) {
+export default async function uploadPDF(path, namespace) {
   const pdfPath = path;
   const loader = new PDFLoader(pdfPath);
 
@@ -17,23 +17,17 @@ export default async function uploadPDF(path) {
   }
   // Chunk size
   const splitter = new TokenTextSplitter({
-    // encodingName: "gpt2",
     chunkSize: 4000,
     chunkOverlap: 200,
   });
-  // const splitter = new CharacterTextSplitter({
-  //   separator: " ",
-  //   chunkSize: 4000,
-  //   chunkOverlap: 400,
-  // });
-
+  // Split the documents into chunks
   const splitDocs = await splitter.splitDocuments(docs);
   // Reduce the size of the metadata
   const reducedDocs = splitDocs.map((doc) => {
+    // Remove the pdf from the metadata
     const reducedMetadata = { ...doc.metadata };
-
     delete reducedMetadata.pdf;
-
+    // Return a new document with the reduced metadata
     return new Document({
       pageContent: doc.pageContent,
       metadata: reducedMetadata,
@@ -41,7 +35,7 @@ export default async function uploadPDF(path) {
   });
 
   // console.log(reducedDocs[0]);
-  console.log(splitDocs.length);
-  // store into pinecone take a while
-  storePinecone(reducedDocs);
+  console.log("The amount of the docs: ", splitDocs.length);
+  // storing into Pinecone take a while
+  storePinecone(reducedDocs, namespace + "@" + Date.now());
 }

@@ -9,13 +9,16 @@ export default function multerPDF() {
   // set the configuration for multer
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
+      // set the relative path but got issue
       const uploadPath = path.join(__dirname, "/public/uploads");
       // use the absolute path to store the file
       cb(null, "/Users/huayuqin/quasar-project/public/upload");
     },
     filename: function (req, file, cb) {
       // set the name of the file
-      cb(null, file.fieldname + "_" + Date.now() + ".pdf");
+      //file.fieldname is the name of the input field associated with the file,such as 'file'
+      // file.originalname is the name of the file
+      cb(null, file.originalname + "_" + Date.now() + ".pdf");
     },
   });
 

@@ -28,10 +28,12 @@ import { Chroma } from "langchain/vectorstores/chroma";
 import { ChromaClient } from "chromadb";
 import { ChatOpenAI } from "langchain/chat_models/openai";
 import { OpenAIEmbeddings } from "langchain/embeddings/openai";
-import { CallbackManager } from "langchain/callbacks";
 import { RetrievalQAChain } from "langchain/chains";
+// stuff related to the stream
+import { CallbackManager } from "langchain/callbacks";
 import { Readable, pipeline } from "stream";
 import { promisify } from "util";
+// Stuff related to the conversational chain
 import { ConversationalRetrievalQAChain } from "langchain/chains";
 import { BufferMemory } from "langchain/memory";
 
@@ -39,6 +41,7 @@ import { BufferMemory } from "langchain/memory";
 import rateLimit from "express-rate-limit";
 import { inMemoryConfig as config } from "./components/chatLimiter.js";
 
+// deprecated
 import {
   getLimitTime,
   setLimitTime,
@@ -55,11 +58,6 @@ dotenv.config({ path: "../../.env" });
 const app = express();
 const port = 3000;
 
-/** STEP ONE AND TWO: LOAD DOCUMENT AND STORE DATA INTO DATABASE*/
-// test with a single page
-// uploadURL(urlsData);
-// console.log("Upload finished");
-
 // cross origin resource sharing
 app.use(bodyParser.json());
 app.use(cors());
@@ -67,66 +65,30 @@ app.use(cors());
 // Enable if you're behind a reverse proxy (Heroku, Bluemix, AWS ELB, Nginx, etc)
 app.set("trust proxy", 1);
 
-// build a limiter
+// initialize a limiter
 let ChatRateLimiter = rateLimit(config);
 
 app.post("/chatBox", async (req, res) => {
   const { input } = req.body;
-  // connect to the database
+  // connect to the Chroma
   const vectorStore = await Chroma.fromExistingCollection(
     new OpenAIEmbeddings(),
     {
-      collectionName: "website-collection",
+      collectionName: "website-collection-2",
     }
   );
-  // look at the collection
-  const collectionClient = new ChromaClient();
-  const collection = await collectionClient.getCollection({
-    name: "website-collection",
-  });
-  console.log(collection);
-
-  // set a instance of openai
+  // set a instance of model
   const model = new OpenAI({
     modelName: "gpt-3.5-turbo-16k",
     temperature: getTemperature(),
   });
 
-  // set a chain to connect the vectorstore and openai
+  // set a chain to connect the vectorstore and model
   const chain = RetrievalQAChain.fromLLM(model, vectorStore.asRetriever(), {
     returnSourceDocuments: true, // the number of the source documents returned by default is 4
   });
-  // const CUSTOM_QUESTION_GENERATOR_CHAIN_PROMPT = `Given the following conversation and a follow up question, return the conversation history excerpt that includes any relevant context to the question if it exists and rephrase the follow up question to be a standalone question.
-  // Chat History:
-  // {chat_history}
-  // Follow Up Input: {question}
-  // Your answer should follow the following format:
-  // \`\`\`
-  // You have a name called: Leo
-  // ----------------
-  // <Relevant chat history excerpt as context here>
-  // Standalone question: <Rephrased question here>
-  // \`\`\`
-  // Your answer:`;
 
-  // const chain = ConversationalRetrievalQAChain.fromLLM(
-  //   model,
-  //   vectorStore.asRetriever(),
-  //   {
-  //     memory: new BufferMemory({
-  //       memoryKey: "chat_history",
-  //       returnMessages: false,
-  //     }),
-  //   },
-  //   {
-  //     returnSourceDocuments: true,
-  //     questionGeneratorChainOptions: {
-  //       template: CUSTOM_QUESTION_GENERATOR_CHAIN_PROMPT,
-  //     },
-  //   }
-  // );
-
-  // return the response
+  // return the response from the model
   const response = await chain.call({ query: input });
   console.log(response);
 
@@ -188,10 +150,8 @@ app.post("/chatBox", async (req, res) => {
 // limit the request amount in a certain time
 app.post("/chat", ChatRateLimiter, async (req, res) => {
   if (req.method === "POST") {
-    // console.log("Inside the PDF handler");
-
-    /** STEP THREE: QUERY THE DATABASE */
-    // Grab the user prompt
+    /** QUERY THE DATABASE */
+    // Grab the user prompt from frontend
     const { input } = req.body;
 
     if (!input) {
@@ -200,27 +160,24 @@ app.post("/chat", ChatRateLimiter, async (req, res) => {
 
     console.log("input received:", input);
 
-    /* Use as part of a chain (currently no metadata filters) */
-
-    // connect the database
+    // connect to the Pinecone
     const vectorStore = await queryPinecone();
-    // set a instance of openai
+    // set a instance of model
     const model = new OpenAI({
       modelName: "gpt-3.5-turbo-16k",
       temperature: getTemperature(),
     });
-    // set a chain to connect the vectorstore and openai
 
     // const chain = VectorDBQAChain.fromLLM(model, vectorStore, {
     //   // k: 1, // number of the most related documents
     //   returnSourceDocuments: true,
     // });
+
     const chain = RetrievalQAChain.fromLLM(model, vectorStore.asRetriever(), {
       returnSourceDocuments: true, // the number of the source documents returned by default is 4
     });
 
-    // set system prompt
-
+    // set a prompt for every input
     const response = await chain.call({ query: getUserPrompt() + input });
     console.log(response);
     // console.log(getTemperature());
@@ -233,7 +190,7 @@ app.post("/chat", ChatRateLimiter, async (req, res) => {
 app.post("/urlUpload", async (req, res) => {
   try {
     const { url } = req.body;
-    // console.log(url);
+
     await uploadURL([url]);
 
     console.log("Upload finished");
@@ -246,7 +203,7 @@ app.post("/urlUpload", async (req, res) => {
 app.post("/urlUploadWindow", async (req, res) => {
   try {
     const { url } = req.body;
-    // console.log(url);
+
     await uploadURLWindow([url]);
 
     console.log("Upload finished");
@@ -258,9 +215,10 @@ app.post("/urlUploadWindow", async (req, res) => {
 
 app.post("/pdfUpload", multerPDF().single("file"), async (req, res) => {
   try {
-    // convert the path to a absolute path, a relative path will cause error
+    // convert the path to a absolute path, a relative path caused error
     const absolutePath = path.resolve(req.file.path);
-    await uploadPDF(absolutePath);
+    console.log(req.body.name);
+    await uploadPDF(absolutePath, req.body.name);
 
     console.log("Upload finished");
     return res.status(200).json({ message: "Upload finished" });
@@ -272,7 +230,6 @@ app.post("/pdfUpload", multerPDF().single("file"), async (req, res) => {
 app.post("/setApiKey", (req, res) => {
   const { apiKey } = req.body;
   process.env.OPENAI_API_KEY = apiKey;
-
   return res.status(200).json({ message: "API key updated" });
 });
 
@@ -298,7 +255,6 @@ app.get("/getTemperature", (req, res) => {
 app.post("/setUserPrompt", (req, res) => {
   const { userPrompt } = req.body;
   setUserPrompt(userPrompt);
-
   return res.status(200).json({ message: "UserPrompt updated" });
 });
 

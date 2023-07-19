@@ -37,6 +37,7 @@ const uploadPDF = async () => {
     const formData = new FormData();
 
     formData.append("file", newFiles.value);
+    formData.append("name", newFiles.value.name);
 
     const response = await fetch("http://192.168.1.66:3000/pdfUpload", {
       method: "POST",
@@ -102,7 +103,7 @@ const uploadPDF = async () => {
 </template>
 <style scoped>
 .upload-area {
-  margin:auto;
+  margin: auto;
   margin-top: 5rem;
   margin-bottom: 2rem;
   width: 200px;

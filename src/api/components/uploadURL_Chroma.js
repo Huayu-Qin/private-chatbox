@@ -11,7 +11,7 @@ export default async function uploadURLs(urls) {
   const webUrl = async (urls) => {
     await Promise.all(
       urls.map(async (url) => {
-        /*STEP ONE: FETCH DATA AND SPLIT DOCUMENTS  */
+        /*FETCH DATA AND SPLIT DOCUMENTS  */
         const webCrawler = createCrawler([url], 10, 200);
         const pages = await webCrawler.startCrawl();
 
@@ -31,8 +31,8 @@ export default async function uploadURLs(urls) {
             // build a splitter instance
             const splitter = new TokenTextSplitter({
               // encodingName: "gpt2",
-              chunkSize: 4000,
-              chunkOverlap: 200,
+              chunkSize: 1000, //4000
+              chunkOverlap: 20, //200
             });
             // split the page content into tokens
             const splitDocs = await splitter.splitDocuments([
@@ -55,7 +55,7 @@ export default async function uploadURLs(urls) {
         console.log("total docs:", docsArray.length);
 
         /* STEP TWO: STORE INTO CHROMA */
-        // create a chroma client instance
+        // connect to the Chroma
         const client = new ChromaClient();
 
         // list all the collections
@@ -67,7 +67,7 @@ export default async function uploadURLs(urls) {
         //   name: "website-collection",
         // });
 
-        // store the documents into the collection
+        // store the documents into the Chroma
         console.log("Storing documents...");
         Chroma.fromDocuments(
           docsArray,
@@ -75,7 +75,7 @@ export default async function uploadURLs(urls) {
             apiKey: process.env.OPENAI_API_KEY,
             modelName: "text-embedding-ada-002",
           }),
-          { collectionName: "website-collection" }
+          { collectionName: "website-collection-2" }
         );
       })
     );

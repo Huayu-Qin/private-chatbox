@@ -49,6 +49,8 @@ const routes = [
     name: "apiText",
     component: () => import("pages/APIText.vue"),
   },
+  // Always leave this as last one,
+  // but you can also remove it
   {
     path: "/:catchAll(.*)*",
     component: () => import("pages/ErrorNotFound.vue"),
@@ -59,38 +61,7 @@ const routes = [
   //   component: () => import("pages/ChatBox.vue"),
   //   children: [{ path: "", component: () => import("pages/ChatBox.vue") }],
   // },
-  // {
-  //   path: "/chatboxWindow",
-  //   component: () => import("pages/ChatBoxWindow.vue"),
-  //   children: [
-  //     { path: "", component: () => import("pages/ChatBoxWindow.vue") },
-  //   ],
-  // },
-  // {
-  //   path: "/urlUpload",
-  //   component: () => import("pages/URLUpload.vue"),
-  //   children: [{ path: "", component: () => import("pages/URLUpload.vue") }],
-  // },
-  // {
-  //   path: "/urlUploadWindow",
-  //   component: () => import("pages/URLUploadWindow.vue"),
-  //   children: [
-  //     { path: "", component: () => import("pages/URLUploadWindow.vue") },
-  //   ],
-  // },
-  // {
-  //   path: "/pdfUpload",
-  //   component: () => import("pages/PDFUpload.vue"),
-  //   children: [{ path: "", component: () => import("pages/PDFUpload.vue") }],
-  // },
-  // {
-  //   path: "/modelConfig",
-  //   component: () => import("pages/ModelConfig.vue"),
-  //   children: [{ path: "", component: () => import("pages/ModelConfig.vue") }],
-  // },
 
-  // // Always leave this as last one,
-  // // but you can also remove it
 ];
 
 export default routes;
