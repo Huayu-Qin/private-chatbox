@@ -1,13 +1,16 @@
 <script setup>
 import { ref, watch, nextTick, onMounted } from "vue";
+import { useChat } from "ai/vue";
 
-const messages = ref([{ text: "Hello, how can I help you?", type: "bot" }]);
-const input = ref("");
+const { messages, input, handleSubmit } = useChat({ api: "/chatStream" });
+
 // floating button state
-const showChat = ref(false);
+
 const loading = ref(false);
 // continue focus on the input field
 const continueFocus = ref(null);
+// Scroll to the bottom of the chat window
+const chatWindow = ref(null);
 
 const sendMessage = async (event) => {
   // check if the user has entered a message
@@ -19,42 +22,13 @@ const sendMessage = async (event) => {
   if (input.value === "") {
     return;
   }
-  // console.log(input.value)
 
-  messages.value.push({
-    text: input.value,
-    type: "user",
-  });
   // console.log(messages.value);
   try {
-    const response = await fetch("http://192.168.1.66:3000/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ input: input.value }),
-    });
-
-    // check if the response is ok
-    if (!response.ok) {
-      if (response.status === 429) {
-        const errorJSON = await response.json();
-        throw new Error(errorJSON || "Too many requests");
-      }
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const responseJSON = await response.json();
-
-    messages.value.push({
-      text: responseJSON.result.text,
-      type: "bot",
-    });
+    await handleSubmit(event);
+    // push the result into the messges array
   } catch (error) {
     console.log("ERROR:" + error);
-    messages.value.push({
-      text: error.message,
-      type: "bot",
-    });
   } finally {
     input.value = "";
     loading.value = false;
@@ -78,18 +52,10 @@ const insertNewLine = (event) => {
   console.log(input.value);
 };
 
-// change the state of the chatbox, but v-model can change it automatically, so it deprecated.
-const toggleChat = () => {
-  showChat.value = !showChat.value;
-};
-
 // auto focus on the input field
 const vFocus = {
   mounted: (el) => el.focus(),
 };
-
-// Scroll to the bottom of the chat window
-const chatWindow = ref(null);
 
 // update the chatWindow ref after the DOM is updated
 onMounted(() => {
@@ -102,7 +68,7 @@ onMounted(() => {
 
 // detect the messages array for changes
 watch(
-  [messages.value, showChat],
+  [messages.value],
   () => {
     // delay the execution of the code until the DOM is updated
     nextTick(() => {
@@ -116,16 +82,6 @@ watch(
   // make sure the watcher is executed after the DOM is updated
   { flush: "post" }
 );
-
-// continue focus on the input field but v-Focus build the first focus and it deprecated.
-// watch(showChat, (value) => {
-//   if (value) {
-//     // make sure the dom is updated
-//     nextTick(() => {
-//       continueFocus.value.focus();
-//     });
-//   }
-// });
 </script>
 <template>
   <q-layout>
@@ -133,68 +89,58 @@ watch(
       <q-page class="flex flex-center">
         <div class="q-pa-md row justify-center">
           <!-- make a transition animation -->
-          <transition name="expand">
-            <div class="chat-window" v-if="showChat">
-              <div class="messages-container" ref="chatWindow">
-                <!-- <q-chat-message name="me" :text="['hey, how are you?']" sent />
+
+          <div class="chat-window">
+            <div class="messages-container" ref="chatWindow">
+              <!-- <q-chat-message name="me" :text="['hey, how are you?']" sent />
                   <q-chat-message name="Jane" :text="['doing fine, how r you?']" /> -->
-                <div
-                  class="message"
-                  v-for="(message, index) in messages"
-                  :key="index"
-                  :class="{
-                    userStyle: message.type === 'user',
-                    alignRight: message.alignRight,
-                  }"
-                >
-                  {{ message.text }}
-                </div>
-                <div class="input-container">
-                  <textarea
-                    class="chat-input"
-                    placeholder="Ask somethings about the website       ↵"
-                    v-model="input"
-                    v-focus
-                    ref="continueFocus"
-                    @keydown.shift.enter.prevent="insertNewLine"
-                    @keydown.enter.exact.prevent="sendMessage"
-                    :disabled="loading"
-                  ></textarea>
-                  <q-btn
-                    class="chat-button"
-                    label="Send"
-                    @click="sendMessage"
-                    :loading="loading"
-                  />
-                </div>
+              <div
+                class="message"
+                v-for="(message, index) in messages"
+                :key="index"
+                :class="{
+                  userStyle: message.role === 'user',
+                  alignRight: message.alignRight,
+                }"
+              >
+                {{ message.content }}
+              </div>
+              <div class="input-container">
+                <textarea
+                  class="chat-input"
+                  placeholder="Ask somethings about the website                                                                 ↵"
+                  v-model="input"
+                  v-focus
+                  ref="continueFocus"
+                  @change="handleInputChange"
+                  @keydown.shift.enter.prevent="insertNewLine"
+                  @keydown.enter.exact.prevent="sendMessage"
+                  :disabled="loading"
+                ></textarea>
+                <q-btn
+                  class="chat-button"
+                  label="Send"
+                  @click="sendMessage"
+                  :loading="loading"
+                />
               </div>
             </div>
-          </transition>
+          </div>
           <!-- <q-tbn class="floating-button" @click="toggleChat" label="Chat" /> -->
         </div>
         <!-- floating button -->
-        <q-fab
-          vertical-actions
-          color=""
-          icon="chat"
-          direction="up"
-          v-model="showChat"
-          class="floating-button"
-        >
-          <q-tooltip>Open chat</q-tooltip>
-        </q-fab>
       </q-page>
     </q-page-container>
   </q-layout>
 </template>
 <style scoped>
 .chat-window {
-  position: fixed;
+  position: relative;
   background-color: white;
-  bottom: 9rem;
+  margin: auto;
   right: 3.5rem;
-  width: 400px;
-  height: 400px;
+  width: 600px;
+  height: 600px;
   border: 2px solid lightblue;
   border-radius: 1rem;
   box-shadow: 5px 5px 5px #eee;
@@ -214,8 +160,8 @@ watch(
 }
 
 .messages-container {
-  width: 365px;
-  height: 300px;
+  width: 565px;
+  height: 500px;
   flex-grow: 1;
   overflow-y: auto;
   margin-bottom: 2rem;
@@ -226,7 +172,7 @@ watch(
 .message {
   background-color: lightblue;
   /* rgb(233, 233, 235) */
-  color: #fff;
+  color: white;
   /* background: rgb(208, 233, 208); */
   border-radius: 0.5rem;
   padding: 0.5rem;
@@ -239,9 +185,9 @@ watch(
 .userStyle {
   /* set the box to the right side */
   align-self: flex-end;
-  background-color: lightblue;
+  background-color: #eee;
   /* #eee */
-  color: white;
+  color: rgb(33, 33, 33);
   /* text-align: right; */
   /* display: inline-block; */
 }
@@ -255,7 +201,7 @@ watch(
   height: 2.5rem;
   bottom: 1rem;
   left: 1.2rem;
-  width: 17.5rem;
+  width: 29.5rem;
   display: flex;
   border: 1px solid #eee;
   border-radius: 0.5rem;
@@ -285,24 +231,5 @@ watch(
   right: 4rem;
   z-index: 999;
   background-color: lightblue;
-}
-
-/* animation */
-.expand-enter-active {
-  animation: bounce-in 0.5s;
-}
-.expand-leave-active {
-  animation: bounce-in 0.5s reverse;
-}
-@keyframes bounce-in {
-  0% {
-    transform: scale(0);
-  }
-  50% {
-    transform: scale(1.25);
-  }
-  100% {
-    transform: scale(1);
-  }
 }
 </style>

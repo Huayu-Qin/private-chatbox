@@ -10,7 +10,7 @@ const collections = async () => {
   return await client.listCollections();
 };
 
-console.log("collections:", collections);
+collections().then((res) => console.log("collections", res));
 
 // delete the collection
 const deleteCollection = async (collection) => {
@@ -23,8 +23,8 @@ const getCollection = async (collection) => {
     name: collection,
   });
 };
-(async () => {
-  await deleteCollection('website-collection-2');
-  const listOfCollections = await collections();
-  console.log(listOfCollections);
-})();
+// (async () => {
+//   await deleteCollection('website-collection-2');
+//   const listOfCollections = await collections();
+//   console.log(listOfCollections);
+// })();

@@ -17,8 +17,9 @@ export default async function uploadPDF(path, namespace) {
   }
   // Chunk size
   const splitter = new TokenTextSplitter({
-    chunkSize: 4000,
-    chunkOverlap: 200,
+    encodingName: "gpt2",
+    chunkSize: 2000, //4000
+    chunkOverlap: 100,
   });
   // Split the documents into chunks
   const splitDocs = await splitter.splitDocuments(docs);
@@ -37,5 +38,5 @@ export default async function uploadPDF(path, namespace) {
   // console.log(reducedDocs[0]);
   console.log("The amount of the docs: ", splitDocs.length);
   // storing into Pinecone take a while
-  storePinecone(reducedDocs, namespace + "@" + Date.now());
+  storePinecone(reducedDocs, "test");//namespace + "@" + Date.now()
 }

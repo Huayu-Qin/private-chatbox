@@ -18,9 +18,9 @@ export default async function docSplitter(url) {
     pages.map(async (page) => {
       // build a splitter instance
       const splitter = new TokenTextSplitter({
-        // encodingName: "gpt2",
-        chunkSize: 4000,
-        chunkOverlap: 200,
+        encodingName: "gpt2",
+        chunkSize: 1000, //3000
+        chunkOverlap: 20, //200
       });
       // split the page content into tokens
       const splitDocs = await splitter.splitDocuments([

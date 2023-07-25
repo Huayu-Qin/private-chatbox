@@ -18,6 +18,7 @@ export default async function uploadURL(url) {
   }
   // Chunk size
   const splitter = new TokenTextSplitter({
+    encodingName: "gpt2",
     chunkSize: 4000,
     chunkOverlap: 200,
   });

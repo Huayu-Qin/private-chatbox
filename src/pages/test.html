@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script
+      src="https://unpkg.com/react@18/umd/react.development.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+      crossorigin
+    ></script>
+    <script type="text/babel">
+      const model = {
+        inputMessage: "hello",
+        responseMessage: "hi",
+      };
+      const MyCustomComponent = ({ triggerQuery, model, modelUpdate }) => {
+        const [messages, setMessages] = React.useState([]);
+
+        const addMessage = (content, type) => {
+          setMessages((prevMessages) => [...prevMessages, { content, type }]);
+        };
+        React.useEffect(() => {
+          const timer = setTimeout(() => {}, 6000);
+          return () => clearTimeout(timer);
+        }, []);
+        React.useEffect(() => {
+          addMessage(model.inputMessage, "user");
+          addMessage(model.responseMessage, "bot");
+        }, [model.inputMessage, model.responseMessage]);
+
+        return (
+          <div>
+            {messages.map((message, index) => (
+              <div key={index}>{message.content}</div>
+            ))}
+          </div>
+        );
+      };
+      const ConnectedComponent =
+        Retool.connectReactComponent(MyCustomComponent);
+      const container = document.getElementById("react");
+      const root = ReactDOM.createRoot(container);
+      root.render(<ConnectedComponent />);
+    </script>
+  </head>
+  <body>
+    <div id="react"></div>
+  </body>
+</html>

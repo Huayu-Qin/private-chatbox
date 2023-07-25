@@ -1,7 +1,7 @@
 import express from "express";
 
 // query the database and return the answer
-import { VectorDBQAChain } from "langchain/chains";
+import { ConversationChain, LLMChain, VectorDBQAChain } from "langchain/chains";
 import { OpenAI } from "langchain/llms/openai";
 import bodyParser from "body-parser";
 
@@ -29,10 +29,17 @@ import { ChromaClient } from "chromadb";
 import { ChatOpenAI } from "langchain/chat_models/openai";
 import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import { RetrievalQAChain } from "langchain/chains";
+
+// use Vercel AI to handle the stream
+import { StreamingTextResponse, LangChainStream } from "ai";
+
 // stuff related to the stream
 import { CallbackManager } from "langchain/callbacks";
 import { Readable, pipeline } from "stream";
 import { promisify } from "util";
+
+import SSE from "express-sse";
+import compression from "compression";
 // Stuff related to the conversational chain
 import { ConversationalRetrievalQAChain } from "langchain/chains";
 import { BufferMemory } from "langchain/memory";
@@ -40,6 +47,14 @@ import { BufferMemory } from "langchain/memory";
 // limit the request amount in a certain time
 import rateLimit from "express-rate-limit";
 import { inMemoryConfig as config } from "./components/chatLimiter.js";
+
+// stuff related to the memory
+import {
+  vectorStoreMemory,
+  conversationSummaryMemory,
+  bufferMemory,
+  redisChatMemory,
+} from "./components/storeMemory.js";
 
 // deprecated
 import {
@@ -58,6 +73,8 @@ dotenv.config({ path: "../../.env" });
 const app = express();
 const port = 3000;
 
+const sse = new SSE();
+app.use(compression());
 // cross origin resource sharing
 app.use(bodyParser.json());
 app.use(cors());
@@ -68,13 +85,92 @@ app.set("trust proxy", 1);
 // initialize a limiter
 let ChatRateLimiter = rateLimit(config);
 
+// connect to SSE and initialize the SSE when client connect to endpoint
+app.get("/chatMemory", sse.init);
+// store the chat history and send updates to the frontend
+app.post("/chatMemory", async (req, res) => {
+  if (req.method === "POST") {
+    const { input } = req.body;
+    const memory = redisChatMemory;
+    const model = new OpenAI({
+      temperature: getTemperature(),
+      modelName: "gpt-3.5-turbo",
+      streaming: true,
+      callbacks: [
+        {
+          handleLLMNewToken(token) {
+            sse.send(token, "newToken");
+          },
+        },
+      ],
+    });
+
+    const prompt =
+      PromptTemplate.fromTemplate(`The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
+
+    Relevant pieces of previous conversation:
+    {history}
+
+    (You do not need to use these pieces of information if not relevant)
+
+    Current conversation:
+    Human: {input}
+    AI:`);
+    // use the conversationSummaryMemory and vectorStoreMemory to store the conversation
+    // const chain = new LLMChain({ llm: model, prompt: prompt, memory: memory });
+
+    // use the bufferMemory to store the conversation
+    const chain = new ConversationChain({ llm: model, memory: memory });
+    await chain.call({ input }).then(() => {
+      sse.send(null, "stop");
+    });
+    // const response = await chain.call({ input });
+    // await memory.loadMemoryVariables({}) got issues when using the vectorStoreMemory
+    // console.log({ response, memory: await memory.loadMemoryVariables({}) });
+    return res.status(200).json({ result: "Streaming completed" });
+  } else {
+    res.status(405).json({ message: "Method not allowed" });
+  }
+});
+
+// Stream the response from the model
+app.post("/chatStream", async (req, res) => {
+  const { messages } = req.body;
+  const { stream, handlers } = LangChainStream();
+
+  //get the user's question which is the last message
+  const userQuestion = messages[messages.length - 1].content;
+  // connect to the Chroma
+  const vectorStore = await Chroma.fromExistingCollection(
+    new OpenAIEmbeddings(),
+    {
+      collectionName: "website-collection",
+    }
+  );
+  // set a instance of model
+  const model = new ChatOpenAI({
+    modelName: "gpt-3.5-turbo-16k",
+    temperature: getTemperature(),
+    streaming: true,
+    callbacks: [handlers],
+  });
+
+  // set a chain to connect the vectorstore and model
+  const chain = RetrievalQAChain.fromLLM(model, vectorStore.asRetriever(), {
+    returnSourceDocuments: true, // the number of the source documents returned by default is 4
+  });
+
+  await chain.call({ query: userQuestion });
+  return new StreamingTextResponse(stream);
+});
+
 app.post("/chatBox", async (req, res) => {
   const { input } = req.body;
   // connect to the Chroma
   const vectorStore = await Chroma.fromExistingCollection(
     new OpenAIEmbeddings(),
     {
-      collectionName: "website-collection-2",
+      collectionName: "website-collection",
     }
   );
   // set a instance of model
@@ -161,7 +257,8 @@ app.post("/chat", ChatRateLimiter, async (req, res) => {
     console.log("input received:", input);
 
     // connect to the Pinecone
-    const vectorStore = await queryPinecone();
+    const vectorStore = await queryPinecone("test");
+
     // set a instance of model
     const model = new OpenAI({
       modelName: "gpt-3.5-turbo-16k",
@@ -284,6 +381,7 @@ app.post("/uploadLimiterConfig", (req, res) => {
 // "beforeExit" is for the server closed normal as "SIGTERM". In terminal, it is 'kill 12345'
 // "SIGINT" is for the server closed by "Ctrl+C" in terminal
 import fs from "fs";
+import { PromptTemplate } from "langchain";
 process.on("SIGINT", () => {
   // load the env config
   const envConfig = dotenv.parse(

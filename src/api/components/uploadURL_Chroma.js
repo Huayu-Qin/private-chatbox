@@ -30,7 +30,7 @@ export default async function uploadURLs(urls) {
           pages.map(async (page) => {
             // build a splitter instance
             const splitter = new TokenTextSplitter({
-              // encodingName: "gpt2",
+              encodingName: "gpt2",
               chunkSize: 1000, //4000
               chunkOverlap: 20, //200
             });
@@ -75,7 +75,7 @@ export default async function uploadURLs(urls) {
             apiKey: process.env.OPENAI_API_KEY,
             modelName: "text-embedding-ada-002",
           }),
-          { collectionName: "website-collection-2" }
+          { collectionName: "website-collection" }
         );
       })
     );

@@ -16,10 +16,16 @@ export default async function uploadURLs(urls) {
         const newReducedDocs = reducedDocs.map((doc) => {
           const newDoc = { ...doc };
           newDoc.pageContent
-            .replace(/['+]/g, "") //remove all the single quotes and plus signs
+            // .replace(/['+]/g, "") //remove all the single quotes and plus signs
             // .replace(/(\s{2, }|\u00A0|&nbsp;)/g, "") //remove all the spaces and non-breaking spaces
+            .replace(/(\n|\t)/g, " ") //remove all the new lines and tabs and returns
             .replace(/\s+/g, " ")
-            .replace(/(\n|\t)/g, "") //remove all the new lines and tabs and returns
+            .trim(); //remove all the leading and trailing spaces
+          newDoc.metadata.text
+            // .replace(/['+]/g, "") //remove all the single quotes and plus signs
+            // .replace(/(\s{2, }|\u00A0|&nbsp;)/g, "") //remove all the spaces and non-breaking spaces
+            .replace(/(\n|\t)/g, " ") //remove all the new lines and tabs and returns
+            .replace(/\s+/g, " ")
             .trim(); //remove all the leading and trailing spaces
           console.log({ doc: newDoc });
           return new Document({
@@ -31,7 +37,7 @@ export default async function uploadURLs(urls) {
           });
         });
         // store data into Pinecone
-        await storePinecone(newReducedDocs, url + "@" + Date.now());
+        await storePinecone(newReducedDocs, "test");
       })
     );
   };
