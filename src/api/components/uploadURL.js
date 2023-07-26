@@ -37,7 +37,7 @@ export default async function uploadURLs(urls) {
           });
         });
         // store data into Pinecone
-        await storePinecone(newReducedDocs, "test");
+        await storePinecone(newReducedDocs, "test2");
       })
     );
   };

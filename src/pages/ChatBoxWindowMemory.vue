@@ -61,7 +61,7 @@ const sendMessage = async (event) => {
     });
 
     //office domain:192.168.1.66
-    const response = await fetch("http://localhost:3000/chatMemory", {
+    const response = await fetch("http://192.168.1.66:3000/chatMemory", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

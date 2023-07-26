@@ -8,6 +8,24 @@ const showChat = ref(false);
 const loading = ref(false);
 // continue focus on the input field
 const continueFocus = ref(null);
+// contact form
+const isContactOpen = ref(false);
+const phoneNumber = ref("");
+const emailAddress = ref("");
+
+const sendContactDetails = () => {
+  if (emailAddress.value.trim() || phoneNumber.value.trim()) {
+    setTimeout(() => {
+      messages.value.push({
+        text: "Thank you for your contact details, we will contact you soon.",
+        type: "bot",
+      });
+    }, 1500);
+  }
+  isContactOpen.value = false;
+  emailAddress.value = "";
+  phoneNumber.value = "";
+};
 
 const sendMessage = async (event) => {
   // check if the user has entered a message
@@ -58,6 +76,8 @@ const sendMessage = async (event) => {
   } finally {
     input.value = "";
     loading.value = false;
+    // make sure contact form is closed
+    isContactOpen.value = false;
     // focus on the input field
     // make sure the dom is updated
     await nextTick();
@@ -102,7 +122,7 @@ onMounted(() => {
 
 // detect the messages array for changes
 watch(
-  [messages.value, showChat],
+  [messages.value, showChat, isContactOpen],
   () => {
     // delay the execution of the code until the DOM is updated
     nextTick(() => {
@@ -149,10 +169,34 @@ watch(
                 >
                   {{ message.text }}
                 </div>
+                <transition name="contact">
+                  <div class="contact-container" v-if="isContactOpen">
+                    <input
+                      class="contact-input"
+                      placeholder="Enter your Email address"
+                      v-model="emailAddress"
+                      v-focus
+                      @keydown.enter.exact.prevent="sendContactDetails"
+                    />
+                    <input
+                      class="contact-input"
+                      placeholder="Enter your phone number"
+                      v-model="phoneNumber"
+                      @keydown.enter.exact.prevent="sendContactDetails"
+                    />
+                    <button
+                      class="contact-submit"
+                      label="Submit"
+                      @click="sendContactDetails"
+                    >
+                      ⏎
+                    </button>
+                  </div>
+                </transition>
                 <div class="input-container">
                   <textarea
                     class="chat-input"
-                    placeholder="Ask somethings about the website       ↵"
+                    placeholder="Ask somethings about the website       ⏎"
                     v-model="input"
                     v-focus
                     ref="continueFocus"
@@ -167,6 +211,14 @@ watch(
                     :loading="loading"
                   />
                 </div>
+              </div>
+              <div>
+                <button
+                  class="contact-button"
+                  @click="isContactOpen = !isContactOpen"
+                >
+                  Click here to request a callback
+                </button>
               </div>
             </div>
           </transition>
@@ -201,7 +253,7 @@ watch(
   padding: 1rem;
   flex-direction: column;
   justify-content: space-between;
-  z-index: 9999;
+  z-index: 9998;
 
   /* Hide scrollbar for Chrome, Safari and Opera */
   ::-webkit-scrollbar {
@@ -253,7 +305,7 @@ watch(
 .chat-input {
   position: absolute;
   height: 2.5rem;
-  bottom: 1rem;
+  bottom: 2rem;
   left: 1.2rem;
   width: 17.5rem;
   display: flex;
@@ -275,8 +327,73 @@ watch(
 
 .chat-button {
   position: absolute;
-  bottom: 1.2rem;
+  /* bottom: 1.2rem; */
+  bottom: 2.1rem;
   right: 1.2rem;
+}
+
+.contact-button {
+  /* padding: auto 0.5rem; */
+  font-weight: bold;
+  position: absolute;
+  /* bottom: 1.2rem; */
+  bottom: 0.2rem;
+  left: 1.2rem;
+  border: 1px solid white;
+  border-radius: 0.5rem;
+  /* box-shadow: 1px 1px 2px rgba(96, 89, 89, 0.3); */
+  background-color: white;
+  /* rgb(74, 74, 74) */
+  color: lightblue;
+  transition: all 0.2s ease-in-out;
+}
+
+.contact-button:hover {
+  background-color: #eee;
+  color: rgb(74, 74, 74);
+  /* font-weight: normal; */
+}
+
+.contact-container {
+  margin: 0.2rem auto;
+  display: flex;
+  flex-direction: row;
+  /* justify-content: flex-start; */
+  flex-wrap: wrap;
+  /* align-items: center */
+}
+
+.contact-input {
+  margin: 0.1rem 0.3rem;
+  margin-bottom: 0.2rem;
+  border: 1px solid #eee;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  /* flex-basis: 50%; */
+  width: 11rem;
+  box-shadow: 1px 1px 2px rgba(96, 89, 89, 0.3);
+}
+.contact-submit {
+  margin-left: 0.5rem;
+  height: 2.5rem;
+  padding: 0.5rem;
+  border: 1px solid #eee;
+  border-radius: 0.5rem;
+  box-shadow: 1px 1px 2px rgba(96, 89, 89, 0.3);
+  background-color: white;
+  color: rgb(74, 74, 74);
+  transition: all 0.2s ease-in-out;
+}
+
+.contact-submit:hover {
+  background-color: #eee;
+  color: black;
+}
+
+.contact-input:focus {
+  outline: none;
+  outline: 2px solid lightblue;
+  /* box-shadow: 0 0 3px #4c8caf; */
 }
 
 .floating-button {
@@ -294,6 +411,20 @@ watch(
 .expand-leave-active {
   animation: bounce-in 0.5s reverse;
 }
+
+.contact-enter-active {
+  transition: all 0.3s ease-out;
+}
+.contact-leave-active {
+  transition: all 0.5s cubic-bezier(1, 0.5, 0.8, 1);
+}
+
+.contact-enter-from,
+.contact-leave-to {
+  transform: translateX(20px);
+  opacity: 0;
+}
+
 @keyframes bounce-in {
   0% {
     transform: scale(0);

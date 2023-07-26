@@ -49,11 +49,6 @@ const routes = [
     name: "apiText",
     component: () => import("pages/APIText.vue"),
   },
-  {
-    path: "/chatboxWinStream",
-    name: "chatboxWinStream",
-    component: () => import("pages/ChatBoxWinStream.vue"),
-  },
   // ChatBoxWindowMemory
   {
     path: "/ChatBoxWindowMemory",

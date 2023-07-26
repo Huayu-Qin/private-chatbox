@@ -30,14 +30,8 @@ import { ChatOpenAI } from "langchain/chat_models/openai";
 import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import { RetrievalQAChain } from "langchain/chains";
 
-// use Vercel AI to handle the stream
-import { StreamingTextResponse, LangChainStream } from "ai";
 
 // stuff related to the stream
-import { CallbackManager } from "langchain/callbacks";
-import { Readable, pipeline } from "stream";
-import { promisify } from "util";
-
 import SSE from "express-sse";
 import compression from "compression";
 // Stuff related to the conversational chain
@@ -55,7 +49,7 @@ import {
   bufferMemory,
   redisChatMemory,
 } from "./components/storeMemory.js";
-
+import { PromptTemplate } from "langchain";
 // deprecated
 import {
   getLimitTime,
@@ -116,10 +110,11 @@ app.post("/chatMemory", async (req, res) => {
     Current conversation:
     Human: {input}
     AI:`);
-    // use the conversationSummaryMemory and vectorStoreMemory to store the conversation
+    // use the conversationSummaryMemory and vectorStoreMemory
+    // to store the conversation by LLMChain
     // const chain = new LLMChain({ llm: model, prompt: prompt, memory: memory });
 
-    // use the bufferMemory to store the conversation
+    // use the bufferMemory and redis to store the conversation by ConversationChain
     const chain = new ConversationChain({ llm: model, memory: memory });
     await chain.call({ input }).then(() => {
       sse.send(null, "stop");
@@ -131,37 +126,6 @@ app.post("/chatMemory", async (req, res) => {
   } else {
     res.status(405).json({ message: "Method not allowed" });
   }
-});
-
-// Stream the response from the model
-app.post("/chatStream", async (req, res) => {
-  const { messages } = req.body;
-  const { stream, handlers } = LangChainStream();
-
-  //get the user's question which is the last message
-  const userQuestion = messages[messages.length - 1].content;
-  // connect to the Chroma
-  const vectorStore = await Chroma.fromExistingCollection(
-    new OpenAIEmbeddings(),
-    {
-      collectionName: "website-collection",
-    }
-  );
-  // set a instance of model
-  const model = new ChatOpenAI({
-    modelName: "gpt-3.5-turbo-16k",
-    temperature: getTemperature(),
-    streaming: true,
-    callbacks: [handlers],
-  });
-
-  // set a chain to connect the vectorstore and model
-  const chain = RetrievalQAChain.fromLLM(model, vectorStore.asRetriever(), {
-    returnSourceDocuments: true, // the number of the source documents returned by default is 4
-  });
-
-  await chain.call({ query: userQuestion });
-  return new StreamingTextResponse(stream);
 });
 
 app.post("/chatBox", async (req, res) => {
@@ -189,58 +153,6 @@ app.post("/chatBox", async (req, res) => {
   console.log(response);
 
   return res.status(200).json({ result: response });
-
-  /* Try to make a stream but was experiencing some issues*/
-  // // set a encoder
-  // const encoder = new TextEncoder();
-  // // set a stream style output
-  // const stream = new Readable({
-  //   async read() {
-  //     // when token is received, encode it and push it to the stream
-  //     const onNewToken = (token) => {
-  //       const encodedToken = encoder.encode(token);
-  //       this.push(encodedToken);
-  //     };
-  //     // when ths stream is ended, push null to the stream
-  //     const onEnd = () => {
-  //       this.push(null);
-  //     };
-
-  //     // set a OpenAI instance
-  //     const model = new OpenAI({
-  //       streaming: true,
-  //       modelName: "gpt-3.5-turbo",
-  //       temperature: getTemperature(),
-  //       callbacks: new CallbackManager({
-  //         handleLLMToken: onNewToken,
-  //         handleLLMEND: onEnd,
-  //       }),
-  //     });
-
-  //     // set a retrievalQAChain instance
-  //     const chain = RetrievalQAChain.fromLLM(model, vectorStore.asRetriever(), {
-  //       returnSourceDocuments: true,
-  //     });
-
-  //     // call the chain
-  //     const response = await chain.call({ query: input });
-
-  //     // push the response to the stream
-  //     if (response) {
-  //       const encodedResponse = encoder.encode(response);
-  //       stream.push(encodedResponse);
-  //     }
-  //   },
-  // });
-  // // set a pipeline to handle the stream
-  // pipeline(stream, res, (err) => {
-  //   if (err) {
-  //     console.log("Error occured:", err);
-  //     res.status(500).end("Server Error");
-  //   } else {
-  //     Console.log("Pipeline succeeded");
-  //   }
-  // });
 });
 
 // limit the request amount in a certain time
@@ -257,7 +169,7 @@ app.post("/chat", ChatRateLimiter, async (req, res) => {
     console.log("input received:", input);
 
     // connect to the Pinecone
-    const vectorStore = await queryPinecone("test");
+    const vectorStore = await queryPinecone("test2");
 
     // set a instance of model
     const model = new OpenAI({
@@ -381,7 +293,6 @@ app.post("/uploadLimiterConfig", (req, res) => {
 // "beforeExit" is for the server closed normal as "SIGTERM". In terminal, it is 'kill 12345'
 // "SIGINT" is for the server closed by "Ctrl+C" in terminal
 import fs from "fs";
-import { PromptTemplate } from "langchain";
 process.on("SIGINT", () => {
   // load the env config
   const envConfig = dotenv.parse(
