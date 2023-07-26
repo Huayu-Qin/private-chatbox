@@ -169,7 +169,7 @@ app.post("/chat", ChatRateLimiter, async (req, res) => {
     console.log("input received:", input);
 
     // connect to the Pinecone
-    const vectorStore = await queryPinecone("test2");
+    const vectorStore = await queryPinecone("test3");
 
     // set a instance of model
     const model = new OpenAI({

@@ -18,7 +18,13 @@ export default function multerPDF() {
       // set the name of the file
       //file.fieldname is the name of the input field associated with the file,such as 'file'
       // file.originalname is the name of the file
-      cb(null, file.originalname + "_" + Date.now() + ".pdf");
+      cb(
+        null,
+        file.originalname.split(".")[0] +
+          "_" +
+          Date.now() +
+          path.extname(file.originalname)
+      );
     },
   });
 

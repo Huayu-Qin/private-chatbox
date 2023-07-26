@@ -8,11 +8,10 @@ const goTo = (route) => {
 <template>
   <div>
     <q-toolbar>
-      <q-toolbar-title class="text-primary">Upload Data</q-toolbar-title>
+      <q-toolbar-title class="text-primary">Retrive Database</q-toolbar-title>
       <q-space />
-      <q-btn flat @click="goTo('pdfUpload')">PDF-Widget</q-btn>
-      <q-btn flat @click="goTo('urlUpload')">URL-Widget</q-btn>
-      <q-btn flat @click="goTo('urlUploadWindow')">URL-Window</q-btn>
+      <q-btn flat @click="goTo('chatbox')">Widget-Pinecone</q-btn>
+      <q-btn flat @click="goTo('chatboxWindow')">Window-Chroma</q-btn>
     </q-toolbar>
     <router-view />
   </div>

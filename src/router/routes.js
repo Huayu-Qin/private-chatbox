@@ -5,14 +5,27 @@ const routes = [
     children: [
       { path: "", redirect: { name: "chatbox" } },
       {
-        path: "chatbox",
-        name: "chatbox",
-        component: () => import("pages/ChatBox.vue"),
+        path: "databaseRetrival",
+        name: "databaseRetrival",
+        component: () => import("pages/DatabaseRetrival.vue"),
+        children: [
+          { path: "", redirect: { name: "chatbox" } },
+          {
+            path: "chatbox",
+            name: "chatbox",
+            component: () => import("pages/ChatBox.vue"),
+          },
+          {
+            path: "chatboxWindow",
+            name: "chatboxWindow",
+            component: () => import("pages/ChatBoxWindow.vue"),
+          },
+        ],
       },
       {
-        path: "chatboxWindow",
-        name: "chatboxWindow",
-        component: () => import("pages/ChatBoxWindow.vue"),
+        path: "chatboxWindowMemory",
+        name: "chatboxWindowMemory",
+        component: () => import("pages/ChatBoxWindowMemory.vue"),
       },
       {
         path: "modelConfig",
@@ -50,11 +63,6 @@ const routes = [
     component: () => import("pages/APIText.vue"),
   },
   // ChatBoxWindowMemory
-  {
-    path: "/ChatBoxWindowMemory",
-    name: "chatboxWindowMemory",
-    component: () => import("pages/ChatBoxWindowMemory.vue"),
-  },
 
   // Always leave this as last one,
   // but you can also remove it
@@ -68,7 +76,6 @@ const routes = [
   //   component: () => import("pages/ChatBox.vue"),
   //   children: [{ path: "", component: () => import("pages/ChatBox.vue") }],
   // },
-
 ];
 
 export default routes;

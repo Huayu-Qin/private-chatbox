@@ -15,8 +15,8 @@ const goTo = (route) => {
       <q-toolbar>
         <q-toolbar-title class="text-primary">My Chatbot</q-toolbar-title>
         <q-space />
-        <q-btn flat @click="goTo('chatbox')">Widget</q-btn>
-        <q-btn flat @click="goTo('chatboxWindow')">WindowBox</q-btn>
+        <q-btn flat @click="goTo('chatbox')">Chat With Data</q-btn>
+        <q-btn flat @click="goTo('chatboxWindowMemory')">ChatBox</q-btn>
         <q-btn flat @click="goTo('modelConfig')">modelConfig</q-btn>
         <q-btn flat @click="goTo('pdfUpload')">Source</q-btn>
       </q-toolbar>

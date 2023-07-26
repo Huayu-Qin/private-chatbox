@@ -3,10 +3,13 @@ import { Document } from "langchain/document";
 import { CharacterTextSplitter } from "langchain/text_splitter";
 import storePinecone from "./storePinecone.js";
 import { TokenTextSplitter } from "langchain/text_splitter";
+import { getDocumentLoader } from "./documentLoader.js";
 
 export default async function uploadPDF(path, namespace) {
   const pdfPath = path;
-  const loader = new PDFLoader(pdfPath);
+  // upload different file types
+  const loader = getDocumentLoader(pdfPath.split(".")[1], pdfPath);
+  // const loader = new PDFLoader(pdfPath);
 
   const docs = await loader.load();
   console.log(docs);
@@ -38,5 +41,5 @@ export default async function uploadPDF(path, namespace) {
   // console.log(reducedDocs[0]);
   console.log("The amount of the docs: ", splitDocs.length);
   // storing into Pinecone take a while
-  storePinecone(reducedDocs, "test");//namespace + "@" + Date.now()
+  storePinecone(reducedDocs, "test3"); //namespace + "@" + Date.now()
 }
