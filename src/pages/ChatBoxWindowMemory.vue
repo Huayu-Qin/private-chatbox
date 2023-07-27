@@ -8,6 +8,10 @@ const showChat = ref(false);
 const loading = ref(false);
 // continue focus on the input field
 const continueFocus = ref(null);
+
+// real-time message
+const realTimeMessage = ref(false);
+
 // source to get the real-time data
 let source = null;
 
@@ -59,6 +63,16 @@ const sendMessage = async (event) => {
     source.addEventListener("stop", () => {
       source.close();
     });
+
+    if (realTimeMessage.value) {
+      const reponse = await fetch("http://192.168.1.66:3000/chatRealTime", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          body: JSON.stringify({ input: input.value }),
+        },
+      });
+    }
 
     //office domain:192.168.1.66
     const response = await fetch("http://192.168.1.66:3000/chatMemory", {
@@ -162,7 +176,6 @@ onUnmounted(() => {
       <q-page class="flex flex-center">
         <div class="q-pa-md row justify-center">
           <!-- make a transition animation -->
-
           <div class="chat-window">
             <div class="messages-container" ref="chatWindow">
               <!-- <q-chat-message name="me" :text="['hey, how are you?']" sent />
@@ -201,6 +214,13 @@ onUnmounted(() => {
           <!-- <q-tbn class="floating-button" @click="toggleChat" label="Chat" /> -->
         </div>
         <!-- floating button -->
+        <div class="config-board">
+          <q-checkbox
+            indeterminate-value="maybe"
+            v-model="realTimeMessage"
+            label="Click to get real-time information"
+          />
+        </div>
       </q-page>
     </q-page-container>
   </q-layout>
@@ -303,5 +323,16 @@ onUnmounted(() => {
   right: 4rem;
   z-index: 999;
   background-color: lightblue;
+}
+
+.config-board {
+  width: 300px;
+  height: 300px;
+  border: 2px solid lightblue;
+  border-radius: 1rem;
+  box-shadow: 5px 5px 5px #eee;
+  padding: 1rem;
+  flex-direction: column;
+  justify-content: space-between;
 }
 </style>

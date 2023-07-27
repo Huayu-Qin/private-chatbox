@@ -41,7 +41,7 @@ export function getDocumentLoader(fileType, filePath) {
       return loader;
   }
 }
-// Directory loader got issues
+// Directory loader got issues, can't load files from zip at the moment
 export function getDirectoryLoader(path) {
   const zipFilePath = path.split(".")[0];
   console.log(zipFilePath);

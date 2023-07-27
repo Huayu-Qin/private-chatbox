@@ -46,8 +46,12 @@ import { RetrievalQAChain } from "langchain/chains";
 import SSE from "express-sse";
 import compression from "compression";
 // Stuff related to the conversational chain
+// ConversationRetrievalQAChain can get the memory and retrieve the answer from the database
 import { ConversationalRetrievalQAChain } from "langchain/chains";
 import { BufferMemory } from "langchain/memory";
+
+// SerpAPI used to get the search result
+import { SerpAPILoader } from 'langchain/document_loaders/web/serpapi'
 
 // limit the request amount in a certain time
 import rateLimit from "express-rate-limit";
@@ -126,6 +130,55 @@ app.post("/chatMemory", async (req, res) => {
     // const chain = new LLMChain({ llm: model, prompt: prompt, memory: memory });
 
     // use the bufferMemory and redis to store the conversation by ConversationChain
+    // const chain = new ConversationChain({ llm: model, memory: memory });
+    const chain = new ConversationalRetrievalQAChain(model,)
+    await chain.call({ input }).then(() => {
+      sse.send(null, "stop");
+    });
+    // const response = await chain.call({ input });
+    // await memory.loadMemoryVariables({}) got issues when using the vectorStoreMemory
+    // console.log({ response, memory: await memory.loadMemoryVariables({}) });
+    return res.status(200).json({ result: "Streaming completed" });
+  } else {
+    res.status(405).json({ message: "Method not allowed" });
+  }
+});
+
+app.get("/chatRealTime", sse.init);
+// store the chat history and send updates to the frontend
+app.post("/chatRealTime", async (req, res) => {
+  if (req.method === "POST") {
+    const { input } = req.body;
+    const memory = redisChatMemory;
+    const model = new OpenAI({
+      temperature: getTemperature(),
+      modelName: "gpt-3.5-turbo",
+      streaming: true,
+      callbacks: [
+        {
+          handleLLMNewToken(token) {
+            sse.send(token, "newToken");
+          },
+        },
+      ],
+    });
+
+    const prompt =
+      PromptTemplate.fromTemplate(`The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
+
+    Relevant pieces of previous conversation:
+    {history}
+
+    (You do not need to use these pieces of information if not relevant)
+
+    Current conversation:
+    Human: {input}
+    AI:`);
+    // use the conversationSummaryMemory and vectorStoreMemory
+    // to store the conversation by LLMChain
+    // const chain = new LLMChain({ llm: model, prompt: prompt, memory: memory });
+
+    // use the bufferMemory and redis to store the conversation by ConversationChain
     const chain = new ConversationChain({ llm: model, memory: memory });
     await chain.call({ input }).then(() => {
       sse.send(null, "stop");
@@ -138,6 +191,7 @@ app.post("/chatMemory", async (req, res) => {
     res.status(405).json({ message: "Method not allowed" });
   }
 });
+
 
 app.post("/chatBox", async (req, res) => {
   const { input } = req.body;
