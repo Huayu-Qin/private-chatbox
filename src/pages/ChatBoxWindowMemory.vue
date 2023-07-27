@@ -47,7 +47,7 @@ const sendMessage = async (event) => {
       source.close();
     }
     // create a new EventSource to get the real-time data for new message
-    source = new EventSource("http://localhost:3000/chatMemory");
+    source = new EventSource("http://192.168.1.66:3000/chatMemory");
     // create listener for the beginning of the stream
     source.addEventListener("newToken", (event) => {
       // clean up the token

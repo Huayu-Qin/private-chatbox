@@ -41,9 +41,10 @@ export function getDocumentLoader(fileType, filePath) {
       return loader;
   }
 }
-
+// Directory loader got issues
 export function getDirectoryLoader(path) {
   const zipFilePath = path.split(".")[0];
+  console.log(zipFilePath);
   return new DirectoryLoader(zipFilePath, {
     ".pdf": (path) => getDocumentLoader("pdf", path),
     ".epub": (path) => getDocumentLoader("epub", path),

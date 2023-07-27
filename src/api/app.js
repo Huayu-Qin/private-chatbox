@@ -22,6 +22,18 @@ import {
   getUserPrompt,
 } from "./components/modelConfig.js";
 import uploadURLWindow from "./components/uploadURL_Chroma.js";
+import {
+  setWidgetBorderColor,
+  setWidgetButtonColor,
+  setWidgetHintColor,
+  setWidgetMessageColor,
+  getWidgetBorderColor,
+  getWidgetButtonColor,
+  getWidgetHintColor,
+  getWidgetMessageColor,
+  getWidgetGreetingMessage,
+  setWidgetGreetingMessage,
+} from "./components/widgetConfig.js";
 
 // use chroma and stream output and retrievalQAChain
 import { Chroma } from "langchain/vectorstores/chroma";
@@ -29,7 +41,6 @@ import { ChromaClient } from "chromadb";
 import { ChatOpenAI } from "langchain/chat_models/openai";
 import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import { RetrievalQAChain } from "langchain/chains";
-
 
 // stuff related to the stream
 import SSE from "express-sse";
@@ -226,6 +237,7 @@ app.post("/pdfUpload", multerPDF().single("file"), async (req, res) => {
   try {
     // convert the path to a absolute path, a relative path caused error
     const absolutePath = path.resolve(req.file.path);
+    console.log(absolutePath);
     console.log(req.body.name);
     await uploadPDF(absolutePath, req.body.name);
 
@@ -289,6 +301,32 @@ app.post("/uploadLimiterConfig", (req, res) => {
   res.json(config);
 });
 
+app.post("/setWidgetConfig", (req, res) => {
+  const {
+    widgetGreetingMessage,
+    widgetBorderColor,
+    widgetButtonColor,
+    widgetHintColor,
+    widgetMessageColor,
+  } = req.body;
+  setWidgetGreetingMessage(widgetGreetingMessage);
+  setWidgetBorderColor(widgetBorderColor);
+  setWidgetButtonColor(widgetButtonColor);
+  setWidgetHintColor(widgetHintColor);
+  setWidgetMessageColor(widgetMessageColor);
+
+  return res.status(200).json({ message: "Widget config updated" });
+});
+
+app.get("/getWidgetConfig", (req, res) => {
+  res.json({
+    widgetGreetingMessage: getWidgetGreetingMessage(),
+    widgetBorderColor: getWidgetBorderColor(),
+    widgetButtonColor: getWidgetButtonColor(),
+    widgetHintColor: getWidgetHintColor(),
+    widgetMessageColor: getWidgetMessageColor(),
+  });
+});
 // save the config in the env file before the server is closed
 // "beforeExit" is for the server closed normal as "SIGTERM". In terminal, it is 'kill 12345'
 // "SIGINT" is for the server closed by "Ctrl+C" in terminal

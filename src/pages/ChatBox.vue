@@ -1,7 +1,8 @@
 <script setup>
 import { ref, watch, nextTick, onMounted } from "vue";
 
-const messages = ref([{ text: "Hello, how can I help you?", type: "bot" }]);
+const widgetGreetingMessage = ref("");
+const messages = ref([{ text: widgetGreetingMessage, type: "bot" }]);
 const input = ref("");
 // floating button state
 const showChat = ref(false);
@@ -12,7 +13,42 @@ const continueFocus = ref(null);
 const isContactOpen = ref(false);
 const phoneNumber = ref("");
 const emailAddress = ref("");
+// Scroll to the bottom of the chat window
+const chatWindow = ref(null);
+// widget config
+const widgetBorderColor = ref("");
+const widgetButtonColor = ref("");
+const widgetHintColor = ref("");
+const widgetMessageColor = ref("");
 
+// set Widget config
+const setStyleVar = (varName, varValue) => {
+  return document.documentElement.style.setProperty(varName, varValue);
+};
+
+const applyWidgetConfig = () => {
+  setStyleVar("--widget-border-color", widgetBorderColor.value);
+  setStyleVar("--widget-button-color", widgetButtonColor.value);
+  setStyleVar("--widget-hint-color", widgetHintColor.value);
+  setStyleVar("--widget-message-color", widgetMessageColor.value);
+};
+
+const getWidgetConfig = async () => {
+  try {
+    const response = await fetch("http://192.168.1.66:3000/getWidgetConfig");
+    const responseJSON = await response.json();
+    widgetGreetingMessage.value = responseJSON.widgetGreetingMessage;
+    widgetBorderColor.value = responseJSON.widgetBorderColor;
+    widgetButtonColor.value = responseJSON.widgetButtonColor;
+    widgetHintColor.value = responseJSON.widgetHintColor;
+    widgetMessageColor.value = responseJSON.widgetMessageColor;
+    applyWidgetConfig();
+  } catch (error) {
+    console.log("ERROR:" + error);
+  }
+};
+
+// contact form
 const sendContactDetails = () => {
   if (emailAddress.value.trim() || phoneNumber.value.trim()) {
     setTimeout(() => {
@@ -27,6 +63,7 @@ const sendContactDetails = () => {
   phoneNumber.value = "";
 };
 
+// input prompt form
 const sendMessage = async (event) => {
   // check if the user has entered a message
   if (!input.value.trim()) {
@@ -108,11 +145,11 @@ const vFocus = {
   mounted: (el) => el.focus(),
 };
 
-// Scroll to the bottom of the chat window
-const chatWindow = ref(null);
-
 // update the chatWindow ref after the DOM is updated
-onMounted(() => {
+onMounted(async () => {
+  // set the widget config
+  await getWidgetConfig();
+
   // delay the execution of the code until the DOM is updated
   nextTick(() => {
     // scroll to the bottom of the chat Window
@@ -171,17 +208,18 @@ watch(
                 </div>
                 <transition name="contact">
                   <div class="contact-container" v-if="isContactOpen">
-                    <input
+                    <!-- <input
                       class="contact-input"
                       placeholder="Enter your Email address"
                       v-model="emailAddress"
                       v-focus
                       @keydown.enter.exact.prevent="sendContactDetails"
-                    />
+                    /> -->
                     <input
                       class="contact-input"
                       placeholder="Enter your phone number"
                       v-model="phoneNumber"
+                      v-focus
                       @keydown.enter.exact.prevent="sendContactDetails"
                     />
                     <button
@@ -247,7 +285,8 @@ watch(
   right: 3.5rem;
   width: 400px;
   height: 400px;
-  border: 2px solid lightblue;
+  /* border: 2px solid lightblue; */
+  border: 2px solid var(--widget-border-color, lightblue);
   border-radius: 1rem;
   box-shadow: 5px 5px 5px #eee;
   padding: 1rem;
@@ -276,7 +315,8 @@ watch(
   flex-direction: column;
 }
 .message {
-  background-color: lightblue;
+  /* background-color: lightblue; */
+  background-color: var(--widget-message-color, lightblue);
   /* rgb(233, 233, 235) */
   color: #fff;
   /* background: rgb(208, 233, 208); */
@@ -291,7 +331,8 @@ watch(
 .userStyle {
   /* set the box to the right side */
   align-self: flex-end;
-  background-color: lightblue;
+  /* background-color: lightblue; */
+  background-color: var(--widget-message-color, lightblue);
   /* #eee */
   color: white;
   /* text-align: right; */
@@ -321,7 +362,8 @@ watch(
 
 .chat-input:focus {
   outline: none;
-  outline: 2px solid lightblue;
+  /* outline: 2px solid lightblue; */
+  outline: 2px solid var(--widget-border-color, lightblue);
   /* box-shadow: 0 0 3px #4c8caf; */
 }
 
@@ -344,7 +386,8 @@ watch(
   /* box-shadow: 1px 1px 2px rgba(96, 89, 89, 0.3); */
   background-color: white;
   /* rgb(74, 74, 74) */
-  color: lightblue;
+  /* color: lightblue; */
+  color: var(--widget-hint-color, lightblue);
   transition: all 0.2s ease-in-out;
 }
 
@@ -355,7 +398,8 @@ watch(
 }
 
 .contact-container {
-  margin: 0.2rem auto;
+  /* margin: 0.2rem auto; */
+  margin-top: 0.2rem;
   display: flex;
   flex-direction: row;
   /* justify-content: flex-start; */
@@ -392,7 +436,8 @@ watch(
 
 .contact-input:focus {
   outline: none;
-  outline: 2px solid lightblue;
+  /* outline: 2px solid lightblue; */
+  outline: 2px solid var(--widget-border-color, lightblue);
   /* box-shadow: 0 0 3px #4c8caf; */
 }
 
@@ -401,7 +446,8 @@ watch(
   bottom: 3rem;
   right: 4rem;
   z-index: 999;
-  background-color: lightblue;
+  /* background-color: lightblue; */
+  background-color: var(--widget-button-color, lightblue);
 }
 
 /* animation */

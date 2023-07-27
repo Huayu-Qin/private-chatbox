@@ -10,9 +10,9 @@ const goTo = (route) => {
     <q-toolbar>
       <q-toolbar-title class="text-primary">Upload Data</q-toolbar-title>
       <q-space />
-      <q-btn flat @click="goTo('pdfUpload')">PDF-Widget</q-btn>
-      <q-btn flat @click="goTo('urlUpload')">URL-Widget</q-btn>
-      <q-btn flat @click="goTo('urlUploadWindow')">URL-Window</q-btn>
+      <q-btn flat @click="goTo('pdfUpload')">Widget-DOC</q-btn>
+      <q-btn flat @click="goTo('urlUpload')">Widget-URL</q-btn>
+      <q-btn flat @click="goTo('urlUploadWindow')">Window-URL</q-btn>
     </q-toolbar>
     <router-view />
   </div>

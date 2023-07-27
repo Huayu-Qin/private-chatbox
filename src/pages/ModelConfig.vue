@@ -7,6 +7,11 @@ let userPrompt = ref("");
 let maxRequest = ref(null);
 let limitTime = ref(null);
 let requestPreventMessage = ref("");
+let widgetBorderColor = ref("");
+let widgetMessageColor = ref("");
+let widgetHintColor = ref("");
+let widgetButtonColor = ref("");
+let widgetGreetingMessage = ref("");
 
 // detect if the input is not formatted correctly
 const temperatureError = ref(false);
@@ -83,15 +88,45 @@ const submitUserPrompt = async () => {
 
 const submitLimiterConfig = async () => {
   try {
-    const response = await fetch("http://192.168.1.66:3000/uploadLimiterConfig", {
+    const response = await fetch(
+      "http://192.168.1.66:3000/uploadLimiterConfig",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          windowMs: limitTime.value,
+          max: maxRequest.value,
+          message: requestPreventMessage.value,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Http error! status:${response.status}`);
+    }
+
+    const responseJSON = await response.json();
+    console.log(responseJSON);
+  } catch (error) {
+    console.log("ERROR:" + error);
+  }
+};
+
+const submitWidgetConfig = async () => {
+  try {
+    const response = await fetch("http://192.168.1.66:3000/setWidgetConfig", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        windowMs: limitTime.value,
-        max: maxRequest.value,
-        message: requestPreventMessage.value,
+        widgetGreetingMessage: widgetGreetingMessage.value,
+        widgetBorderColor: widgetBorderColor.value,
+        widgetButtonColor: widgetButtonColor.value,
+        widgetHintColor: widgetHintColor.value,
+        widgetMessageColor: widgetMessageColor.value,
       }),
     });
 
@@ -105,7 +140,6 @@ const submitLimiterConfig = async () => {
     console.log("ERROR:" + error);
   }
 };
-
 // const submitMaxRequest = async () => {
 //   try {
 //     const response = await fetch("http://localhost:3000/setMaxRequest", {
@@ -206,6 +240,16 @@ const getLimiterConfig = async () => {
   // console.log(response.json())
 };
 
+const getWidgetConfig = async () => {
+  const response = await fetch("http://192.168.1.66:3000/getWidgetConfig");
+  const responseJSON = await response.json();
+  widgetGreetingMessage.value = responseJSON.widgetGreetingMessage;
+  widgetBorderColor.value = responseJSON.widgetBorderColor;
+  widgetButtonColor.value = responseJSON.widgetButtonColor;
+  widgetHintColor.value = responseJSON.widgetHintColor;
+  widgetMessageColor.value = responseJSON.widgetMessageColor;
+};
+
 // const getMaxRequest = async () => {
 //   const response = await fetch("http://localhost:3000/getMaxRequest");
 //   const responseJSON = await response.json();
@@ -234,6 +278,7 @@ const handleSubmit = async () => {
   await submitTemperature();
   await submitUserPrompt();
   await submitLimiterConfig();
+  await submitWidgetConfig();
   // await submitMaxRequest();
   // await submitLimitTime();
   // await submitRequestPreventMessage();
@@ -245,6 +290,7 @@ onMounted(async () => {
   await getTemperature();
   await getUserPrompt();
   await getLimiterConfig();
+  await getWidgetConfig();
   // await getMaxRequest();
   // await getLimitTime();
   // await getRequestPreventMessage();
@@ -324,6 +370,44 @@ const restrictTemperatureInput = (event) => {
       label="Show the message when request block"
       class="input-message"
     />
+    <span>Widget Color</span>
+    <div class="widget-form">
+      <q-input
+        v-model="widgetGreetingMessage"
+        filled
+        type="textarea"
+        rows="2"
+        label="Enter the greeting words"
+      />
+      <span
+        >Border color:
+        <span :style="{ color: widgetBorderColor }">{{
+          widgetBorderColor
+        }}</span></span
+      >
+      <input type="color" v-model="widgetBorderColor" />
+      <span
+        >Message color:
+        <span :style="{ color: widgetMessageColor }">{{
+          widgetMessageColor
+        }}</span></span
+      >
+      <input type="color" v-model="widgetMessageColor" />
+      <span
+        >Hint color:
+        <span :style="{ color: widgetHintColor }">{{
+          widgetHintColor
+        }}</span></span
+      >
+      <input type="color" v-model="widgetHintColor" />
+      <span
+        >Widget button color:
+        <span :style="{ color: widgetButtonColor }">{{
+          widgetButtonColor
+        }}</span></span
+      >
+      <input type="color" v-model="widgetButtonColor" />
+    </div>
     <q-btn
       class="submit-button"
       @click="handleSubmit"
@@ -347,7 +431,7 @@ const restrictTemperatureInput = (event) => {
 
 .chat-limit {
   display: flex;
-  justify-content: space-between;
+  /* justify-content: space-between; */
 }
 
 .chat-limit > * {
@@ -356,6 +440,12 @@ const restrictTemperatureInput = (event) => {
 
 .input-message {
   /* width: 25rem; */
+}
+
+.widget-form {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 .submit-button {
   width: 10rem;
