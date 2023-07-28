@@ -5,6 +5,8 @@ const files = ref([]);
 const loading = ref(false);
 const fileInputRef = ref(null);
 const needUpload = ref(false);
+// mock user id
+const userId = "123";
 
 // trigger the <input> element
 const handleUploadAreaClick = () => {
@@ -42,11 +44,9 @@ const uploadPDF = async () => {
 
     formData.append("file", newFiles.value);
     formData.append("name", newFiles.value.name);
-    // mock user id
-    const userId = "123";
     formData.append("userId", userId);
 
-    const response = await fetch("http://192.168.1.66:3000/pdfUpload", {
+    const response = await fetch("http://192.168.1.66:3000/pdfUploadWindow", {
       method: "POST",
       body: formData,
     });
@@ -79,18 +79,22 @@ const uploadPDF = async () => {
   }
 };
 
-const deleteFile = async (fileUniqueName) => {
+const deleteFile = async (fileUniqueName, userId) => {
   try {
     if (!fileUniqueName || fileUniqueName === "") {
       console.log("No file selected");
       return;
     }
-    const response = await fetch(
-      `http://192.168.1.66:3000/deleteFile/${fileUniqueName}`,
-      {
-        method: "DELETE",
-      }
+
+    const url = new URL(
+      `http://192.168.1.66:3000/deleteFile/${fileUniqueName}`
     );
+    // add userId to query params
+    url.searchParams.append("userId", userId);
+
+    const response = await fetch(url, {
+      method: "DELETE",
+    });
     if (!response.ok) {
       const errorBody = await response.json();
       console.log("Error response body: " + errorBody.message);
@@ -101,7 +105,9 @@ const deleteFile = async (fileUniqueName) => {
     console.log(responseJSON.message);
 
     // remove the file from the array
-    files.value = files.value.filter((file) => file.UniqueName !== fileUniqueName);
+    files.value = files.value.filter(
+      (file) => file.UniqueName !== fileUniqueName
+    );
   } catch (error) {
     console.log(error);
   }
@@ -139,7 +145,7 @@ const deleteFile = async (fileUniqueName) => {
         <span v-if="file.status === 'success'">- Upload Successfully</span>
         <q-btn
           v-if="file.status === 'success'"
-          @click="deleteFile(file.UniqueName)"
+          @click="deleteFile(file.UniqueName, userId)"
           label="X"
           color="negative"
         ></q-btn>

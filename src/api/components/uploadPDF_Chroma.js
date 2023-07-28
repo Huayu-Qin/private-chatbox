@@ -4,8 +4,11 @@ import { CharacterTextSplitter } from "langchain/text_splitter";
 import storePinecone from "./storePinecone.js";
 import { TokenTextSplitter } from "langchain/text_splitter";
 import { getDocumentLoader } from "./documentLoader.js";
+import { OpenAIEmbeddings } from "langchain/embeddings/openai";
+import { ChromaClient } from "chromadb";
+import { Chroma } from "langchain/vectorstores/chroma";
 
-export default async function uploadPDF(path, documentName, userId) {
+export default async function uploadPDFWindow(path, documentName, userId) {
   const pdfPath = path;
   // upload different file types
   const loader = getDocumentLoader(pdfPath.split(".")[1], pdfPath);
@@ -44,6 +47,27 @@ export default async function uploadPDF(path, documentName, userId) {
 
   // console.log(reducedDocs[0]);
   console.log("The amount of the docs: ", splitDocs.length);
-  // storing into Pinecone take a while
-  storePinecone(reducedDocs, "test4"); //namespace + "@" + Date.now()
+  /* STEP TWO: STORE INTO CHROMA */
+  // connect to the Chroma
+  const client = new ChromaClient();
+
+  // delete a existing collection
+  // await client.deleteCollection({
+  //   name: "website-collection",
+  // });
+
+  // store the documents into the Chroma
+  console.log("Storing documents...");
+  await Chroma.fromDocuments(
+    reducedDocs,
+    new OpenAIEmbeddings({
+      apiKey: process.env.OPENAI_API_KEY,
+      modelName: "text-embedding-ada-002",
+    }),
+    { collectionName: userId }
+  );
+  console.log("Successfully stored documentsin Chroma.");
+  // list all the collections
+  const collections = await client.listCollections();
+  console.log("collections:", collections);
 }

@@ -24,7 +24,14 @@ const getCollection = async (collection) => {
   });
 };
 // (async () => {
-//   await deleteCollection('website-collection-2');
+//   await deleteCollection('userId');
 //   const listOfCollections = await collections();
 //   console.log(listOfCollections);
 // })();
+
+(async () => {
+  const collection = await getCollection("123");
+  // const listOfCollections = await collections();
+  const listOfCollection = await collection.peek()
+  console.log(listOfCollection);
+})();

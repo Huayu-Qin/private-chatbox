@@ -49,6 +49,11 @@ const routes = [
             component: () => import("pages/URLUpload.vue"),
           },
           {
+            path: "pdfUploadWindow",
+            name: "pdfUploadWindow",
+            component: () => import("pages/PDFUploadWindow.vue"),
+          },
+          {
             path: "urlUploadWindow",
             name: "urlUploadWindow",
             component: () => import("pages/URLUploadWindow.vue"),

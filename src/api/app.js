@@ -22,6 +22,8 @@ import {
   getUserPrompt,
 } from "./components/modelConfig.js";
 import uploadURLWindow from "./components/uploadURL_Chroma.js";
+import uploadPDFWindow from "./components/uploadPDF_Chroma.js";
+import deleteDocument from "./components/deleteDocument.js";
 import {
   setWidgetBorderColor,
   setWidgetButtonColor,
@@ -78,7 +80,8 @@ import {
   setRequestPreventMessage,
 } from "./components/systemConfig.js";
 
-import path from "path";
+import path, { dirname } from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config({ path: "../../.env" });
 
@@ -300,19 +303,73 @@ app.post("/urlUploadWindow", async (req, res) => {
   }
 });
 
-app.post("/pdfUpload", multerPDF().single("file"), async (req, res) => {
+app.post("/pdfUploadWindow", multerPDF().single("file"), async (req, res) => {
   try {
+    console.log(req.body.userId);
     // convert the path to a absolute path, a relative path caused error
     const absolutePath = path.resolve(req.file.path);
     console.log(absolutePath);
     console.log(req.body.name);
-    await uploadPDF(absolutePath, req.body.name);
+    const UniqueName = absolutePath.split("/").pop();
+    await uploadPDFWindow(absolutePath, UniqueName, req.body.userId);
 
     console.log("Upload finished");
-    return res.status(200).json({ message: "Upload finished" });
+    return res.status(200).json({
+      message: "Upload finished",
+      fileName: UniqueName,
+      userId: req.body.userId,
+    });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
+});
+
+app.post("/pdfUploadWindow", multerPDF().single("file"), async (req, res) => {
+  try {
+    console.log(req.body.userId);
+    // convert the path to a absolute path, a relative path caused error
+    const absolutePath = path.resolve(req.file.path);
+    console.log(absolutePath);
+    console.log(req.body.name);
+    const UniqueName = absolutePath.split("/").pop();
+    await uploadPDF(absolutePath, UniqueName, req.body.userId);
+
+    console.log("Upload finished");
+    return res.status(200).json({
+      message: "Upload finished",
+      fileName: UniqueName,
+      userId: req.body.userId,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+app.delete("/deleteFile/:fileName", (req, res) => {
+  const fileName = req.params.fileName;
+  // get the userId from the query
+  const userId = req.query.userId;
+  const filePath = path.join(
+    fileURLToPath(dirname(dirname(dirname(import.meta.url)))),
+    "/public/uploads/" + fileName
+  );
+  console.log(filePath);
+  if (fs.existsSync(filePath)) {
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).json({ message: "Failed to delete the file" });
+      } else {
+        console.log("File deleted");
+        return res.status(200).json({ message: "File deleted" });
+      }
+    });
+  } else {
+    return res.status(404).json({ message: "File not found" });
+  }
+
+  // delete the file in the database
+  deleteDocument(userId, fileName);
 });
 
 app.post("/setApiKey", (req, res) => {
@@ -365,7 +422,7 @@ app.post("/uploadLimiterConfig", (req, res) => {
   // update the limiter
   ChatRateLimiter = rateLimit(config);
 
-  res.json(config); 
+  res.json(config);
 });
 
 app.post("/setWidgetConfig", (req, res) => {
