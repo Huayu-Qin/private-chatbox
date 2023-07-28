@@ -1,6 +1,14 @@
 import * as dotenv from "dotenv";
-dotenv.config({ path: "/Users/huayuqin/quasar-project/.env" });
+import path, { dirname } from "path";
+import { fileURLToPath } from "url";
 
+const __dirname = fileURLToPath(
+  dirname(dirname(dirname(dirname(import.meta.url))))
+);
+
+const uploadPath = path.join(__dirname, ".env")
+dotenv.config({ path: uploadPath });
+console.log(uploadPath);
 // load the env config
 const { RATE_LIMIT_WINDOW, RATE_LIMIT_MAX, RATE_LIMIT_MESSAGE } = process.env;
 // console.log(process.env);
@@ -9,4 +17,3 @@ export let inMemoryConfig = {
   max: parseInt(RATE_LIMIT_MAX),
   message: JSON.stringify(RATE_LIMIT_MESSAGE),
 };
-

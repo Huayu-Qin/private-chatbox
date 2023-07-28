@@ -41,5 +41,5 @@ export default async function uploadPDF(path, namespace) {
   // console.log(reducedDocs[0]);
   console.log("The amount of the docs: ", splitDocs.length);
   // storing into Pinecone take a while
-  storePinecone(reducedDocs, "test3"); //namespace + "@" + Date.now()
+  storePinecone(reducedDocs, "test4"); //namespace + "@" + Date.now()
 }

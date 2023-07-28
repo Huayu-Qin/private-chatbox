@@ -214,13 +214,13 @@ onUnmounted(() => {
           <!-- <q-tbn class="floating-button" @click="toggleChat" label="Chat" /> -->
         </div>
         <!-- floating button -->
-        <div class="config-board">
+        <!-- <div class="config-board">
           <q-checkbox
             indeterminate-value="maybe"
             v-model="realTimeMessage"
             label="Click to get real-time information"
           />
-        </div>
+        </div> -->
       </q-page>
     </q-page-container>
   </q-layout>

@@ -4,7 +4,7 @@ import { fileURLToPath } from "url";
 
 export default function multerPDF() {
   // get the current directory
-  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const __dirname = fileURLToPath(dirname(dirname(dirname(dirname(import.meta.url)))));
   console.log(__dirname);
   // set the configuration for multer
   const storage = multer.diskStorage({
@@ -12,7 +12,7 @@ export default function multerPDF() {
       // set the relative path but got issue
       const uploadPath = path.join(__dirname, "/public/uploads");
       // use the absolute path to store the file
-      cb(null, "/Users/huayuqin/quasar-project/public/upload");
+      cb(null, uploadPath);// /Users/huayuqin/quasar-project/public/upload
     },
     filename: function (req, file, cb) {
       // set the name of the file

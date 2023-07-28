@@ -7,15 +7,15 @@ import { RedisChatMessageHistory } from "langchain/stores/message/redis";
 import { OpenAI } from "langchain/llms/openai";
 import { BufferMemory } from "langchain/memory";
 
-const vectorStore = new MemoryVectorStore(new OpenAIEmbeddings());
+export const vectorStoreWithMemory = new MemoryVectorStore(new OpenAIEmbeddings());
 
 export const vectorStoreMemory = new VectorStoreRetrieverMemory({
-  vectorStoreRetriever: vectorStore.asRetriever(1),
-  memoryKey: "history",
+  vectorStoreRetriever: vectorStoreWithMemory.asRetriever(1),
+  memoryKey: "chat_history",
 });
 
 export const conversationSummaryMemory = new ConversationSummaryMemory({
-  memortKey: "history",
+  memortKey: "chat_history",
   llm: new OpenAI({ modelName: "gpt-3.5-turbo", temperature: 0 }),
 });
 

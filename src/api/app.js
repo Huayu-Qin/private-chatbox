@@ -51,7 +51,9 @@ import { ConversationalRetrievalQAChain } from "langchain/chains";
 import { BufferMemory } from "langchain/memory";
 
 // SerpAPI used to get the search result
-import { SerpAPILoader } from 'langchain/document_loaders/web/serpapi'
+import { SerpAPILoader } from "langchain/document_loaders/web/serpapi";
+import realTimeSearch from "./components/realTimeSearch.js";
+import { MemoryVectorStore } from "langchain/vectorstores/memory";
 
 // limit the request amount in a certain time
 import rateLimit from "express-rate-limit";
@@ -63,6 +65,7 @@ import {
   conversationSummaryMemory,
   bufferMemory,
   redisChatMemory,
+  vectorStoreWithMemory,
 } from "./components/storeMemory.js";
 import { PromptTemplate } from "langchain";
 // deprecated
@@ -100,6 +103,7 @@ app.get("/chatMemory", sse.init);
 app.post("/chatMemory", async (req, res) => {
   if (req.method === "POST") {
     const { input } = req.body;
+    // use redis to store the chat history
     const memory = redisChatMemory;
     const model = new OpenAI({
       temperature: getTemperature(),
@@ -107,6 +111,7 @@ app.post("/chatMemory", async (req, res) => {
       streaming: true,
       callbacks: [
         {
+          // set the start token and send tokens to the frontend
           handleLLMNewToken(token) {
             sse.send(token, "newToken");
           },
@@ -114,11 +119,12 @@ app.post("/chatMemory", async (req, res) => {
       ],
     });
 
+    // prompt template
     const prompt =
       PromptTemplate.fromTemplate(`The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
 
     Relevant pieces of previous conversation:
-    {history}
+    {chat_history}
 
     (You do not need to use these pieces of information if not relevant)
 
@@ -130,9 +136,10 @@ app.post("/chatMemory", async (req, res) => {
     // const chain = new LLMChain({ llm: model, prompt: prompt, memory: memory });
 
     // use the bufferMemory and redis to store the conversation by ConversationChain
-    // const chain = new ConversationChain({ llm: model, memory: memory });
-    const chain = new ConversationalRetrievalQAChain(model,)
+    const chain = new ConversationChain({ llm: model, memory: memory });
+    // const chain = new ConversationalRetrievalQAChain(model,)
     await chain.call({ input }).then(() => {
+      // when the conversation is finished, trigger the stop event
       sse.send(null, "stop");
     });
     // const response = await chain.call({ input });
@@ -149,7 +156,13 @@ app.get("/chatRealTime", sse.init);
 app.post("/chatRealTime", async (req, res) => {
   if (req.method === "POST") {
     const { input } = req.body;
-    const memory = redisChatMemory;
+    const docs = await realTimeSearch(input);
+    const memory = vectorStoreMemory;
+    // const vectorDatabase = vectorStoreWithMemory;
+    const vectorStore = await MemoryVectorStore.fromDocuments(
+      docs,
+      new OpenAIEmbeddings()
+    );
     const model = new OpenAI({
       temperature: getTemperature(),
       modelName: "gpt-3.5-turbo",
@@ -167,7 +180,7 @@ app.post("/chatRealTime", async (req, res) => {
       PromptTemplate.fromTemplate(`The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
 
     Relevant pieces of previous conversation:
-    {history}
+    {chat_history}
 
     (You do not need to use these pieces of information if not relevant)
 
@@ -180,6 +193,7 @@ app.post("/chatRealTime", async (req, res) => {
 
     // use the bufferMemory and redis to store the conversation by ConversationChain
     const chain = new ConversationChain({ llm: model, memory: memory });
+
     await chain.call({ input }).then(() => {
       sse.send(null, "stop");
     });
@@ -191,7 +205,6 @@ app.post("/chatRealTime", async (req, res) => {
     res.status(405).json({ message: "Method not allowed" });
   }
 });
-
 
 app.post("/chatBox", async (req, res) => {
   const { input } = req.body;
@@ -234,7 +247,7 @@ app.post("/chat", ChatRateLimiter, async (req, res) => {
     console.log("input received:", input);
 
     // connect to the Pinecone
-    const vectorStore = await queryPinecone("test3");
+    const vectorStore = await queryPinecone("test4");
 
     // set a instance of model
     const model = new OpenAI({
@@ -352,7 +365,7 @@ app.post("/uploadLimiterConfig", (req, res) => {
   // update the limiter
   ChatRateLimiter = rateLimit(config);
 
-  res.json(config);
+  res.json(config); 
 });
 
 app.post("/setWidgetConfig", (req, res) => {
@@ -385,6 +398,7 @@ app.get("/getWidgetConfig", (req, res) => {
 // "beforeExit" is for the server closed normal as "SIGTERM". In terminal, it is 'kill 12345'
 // "SIGINT" is for the server closed by "Ctrl+C" in terminal
 import fs from "fs";
+
 process.on("SIGINT", () => {
   // load the env config
   const envConfig = dotenv.parse(
