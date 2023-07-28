@@ -25,7 +25,7 @@ const limitTimeInMinutes = computed({
 
 const submitAPIKey = async () => {
   try {
-    const response = await fetch("http://192.168.1.66:3000/setApiKey", {
+    const response = await fetch("http://localhost:3000/setApiKey", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -46,7 +46,7 @@ const submitAPIKey = async () => {
 
 const submitTemperature = async () => {
   try {
-    const response = await fetch("http://192.168.1.66:3000/setTemperature", {
+    const response = await fetch("http://localhost:3000/setTemperature", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -67,7 +67,7 @@ const submitTemperature = async () => {
 
 const submitUserPrompt = async () => {
   try {
-    const response = await fetch("http://192.168.1.66:3000/setUserPrompt", {
+    const response = await fetch("http://localhost:3000/setUserPrompt", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -89,7 +89,7 @@ const submitUserPrompt = async () => {
 const submitLimiterConfig = async () => {
   try {
     const response = await fetch(
-      "http://192.168.1.66:3000/uploadLimiterConfig",
+      "http://localhost:3000/uploadLimiterConfig",
       {
         method: "POST",
         headers: {
@@ -116,7 +116,7 @@ const submitLimiterConfig = async () => {
 
 const submitWidgetConfig = async () => {
   try {
-    const response = await fetch("http://192.168.1.66:3000/setWidgetConfig", {
+    const response = await fetch("http://localhost:3000/setWidgetConfig", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -209,28 +209,28 @@ const submitWidgetConfig = async () => {
 // };
 
 const getAPIKey = async () => {
-  const response = await fetch("http://192.168.1.66:3000/getApiKey");
+  const response = await fetch("http://localhost:3000/getApiKey");
   const responseJSON = await response.json();
   console.log(responseJSON);
   openaiAPIKey.value = responseJSON.apiKey;
 };
 
 const getTemperature = async () => {
-  const response = await fetch("http://192.168.1.66:3000/getTemperature");
+  const response = await fetch("http://localhost:3000/getTemperature");
   const responseJSON = await response.json();
   console.log(responseJSON);
   temperature.value = responseJSON.temperature;
 };
 
 const getUserPrompt = async () => {
-  const response = await fetch("http://192.168.1.66:3000/getUserPrompt");
+  const response = await fetch("http://localhost:3000/getUserPrompt");
   const responseJSON = await response.json();
   console.log(responseJSON);
   userPrompt.value = responseJSON.userPrompt;
 };
 
 const getLimiterConfig = async () => {
-  const response = await fetch("http://192.168.1.66:3000/getLimiterConfig");
+  const response = await fetch("http://localhost:3000/getLimiterConfig");
   const { windowMs, max, message } = await response.json();
   console.log(windowMs, max, message);
   limitTime.value = windowMs;
@@ -241,7 +241,7 @@ const getLimiterConfig = async () => {
 };
 
 const getWidgetConfig = async () => {
-  const response = await fetch("http://192.168.1.66:3000/getWidgetConfig");
+  const response = await fetch("http://localhost:3000/getWidgetConfig");
   const responseJSON = await response.json();
   widgetGreetingMessage.value = responseJSON.widgetGreetingMessage;
   widgetBorderColor.value = responseJSON.widgetBorderColor;

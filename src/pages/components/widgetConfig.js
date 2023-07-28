@@ -1,5 +1,5 @@
 export async function getWidgetConfig() {
-  const response = await fetch("http://192.168.1.66:3000/getWidgetConfig");
+  const response = await fetch("http://localhost:3000/getWidgetConfig");
   const responseJSON = await response.json();
   widgetGreetingMessage.value = responseJSON.widgetGreetingMessage;
   widgetBorderColor.value = responseJSON.widgetBorderColor;

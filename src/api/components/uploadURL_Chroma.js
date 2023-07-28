@@ -7,7 +7,7 @@ import { Chroma } from "langchain/vectorstores/chroma";
 
 import createCrawler from "./webCrawler.js";
 
-export default async function uploadURLs(urls) {
+export default async function uploadURLs(urls, documentName, userId) {
   const webUrl = async (urls) => {
     await Promise.all(
       urls.map(async (url) => {
@@ -41,6 +41,8 @@ export default async function uploadURLs(urls) {
                 metadata: {
                   url: page.url,
                   text: truncatedPages(page.text, 36000),
+                  userId: userId,
+                  documentName: documentName,
                 },
               }),
             ]);
@@ -58,27 +60,27 @@ export default async function uploadURLs(urls) {
         // connect to the Chroma
         const client = new ChromaClient();
 
-        // list all the collections
-        const collections = await client.listCollections();
-        console.log("collections:", collections);
 
         // delete a existing collection
         // await client.deleteCollection({
-        //   name: "website-collection",
-        // });
+          //   name: "website-collection",
+          // });
 
-        // store the documents into the Chroma
-        console.log("Storing documents...");
-        Chroma.fromDocuments(
-          docsArray,
-          new OpenAIEmbeddings({
-            apiKey: process.env.OPENAI_API_KEY,
-            modelName: "text-embedding-ada-002",
-          }),
-          { collectionName: "website-collection" }
-        );
-      })
-    );
+          // store the documents into the Chroma
+          console.log("Storing documents...");
+          await Chroma.fromDocuments(
+            docsArray,
+            new OpenAIEmbeddings({
+              apiKey: process.env.OPENAI_API_KEY,
+              modelName: "text-embedding-ada-002",
+            }),
+            { collectionName: userId }
+            );
+            // list all the collections
+            const collections = await client.listCollections();
+            console.log("collections:", collections);
+          })
+          );
   };
   await webUrl(urls);
 }

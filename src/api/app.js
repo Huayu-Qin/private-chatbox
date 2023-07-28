@@ -290,20 +290,7 @@ app.post("/urlUpload", async (req, res) => {
   }
 });
 
-app.post("/urlUploadWindow", async (req, res) => {
-  try {
-    const { url } = req.body;
-
-    await uploadURLWindow([url]);
-
-    console.log("Upload finished");
-    return res.status(200).json({ message: "Upload finished" });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-});
-
-app.post("/pdfUploadWindow", multerPDF().single("file"), async (req, res) => {
+app.post("/pdfUpload", multerPDF().single("file"), async (req, res) => {
   try {
     console.log(req.body.userId);
     // convert the path to a absolute path, a relative path caused error
@@ -311,7 +298,7 @@ app.post("/pdfUploadWindow", multerPDF().single("file"), async (req, res) => {
     console.log(absolutePath);
     console.log(req.body.name);
     const UniqueName = absolutePath.split("/").pop();
-    await uploadPDFWindow(absolutePath, UniqueName, req.body.userId);
+    await uploadPDF(absolutePath, UniqueName, req.body.userId);
 
     console.log("Upload finished");
     return res.status(200).json({
@@ -324,6 +311,35 @@ app.post("/pdfUploadWindow", multerPDF().single("file"), async (req, res) => {
   }
 });
 
+app.post("/urlUploadWindow", async (req, res) => {
+  try {
+    const { url, userId } = req.body;
+    const UniqueName = url.split('.')[1] + Date.now();
+    await uploadURLWindow([url], UniqueName, userId);
+
+    console.log("Upload finished");
+    return res
+      .status(200)
+      .json({
+        message: "Upload finished",
+        urlName: UniqueName,
+        userId: userId,
+      });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+app.delete("/deleteUrl/:urlName", (req, res) => {
+  const urlName = req.params.urlName;
+  // get the userId from the query
+  const userId = req.query.userId;
+
+  // delete the file in the database
+  deleteDocument(userId, urlName);
+  return res.status(200).json({ message: "Url deleted" });
+});
+
 app.post("/pdfUploadWindow", multerPDF().single("file"), async (req, res) => {
   try {
     console.log(req.body.userId);
@@ -332,7 +348,7 @@ app.post("/pdfUploadWindow", multerPDF().single("file"), async (req, res) => {
     console.log(absolutePath);
     console.log(req.body.name);
     const UniqueName = absolutePath.split("/").pop();
-    await uploadPDF(absolutePath, UniqueName, req.body.userId);
+    await uploadPDFWindow(absolutePath, UniqueName, req.body.userId);
 
     console.log("Upload finished");
     return res.status(200).json({

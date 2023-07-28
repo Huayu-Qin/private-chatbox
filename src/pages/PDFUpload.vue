@@ -46,7 +46,7 @@ const uploadPDF = async () => {
     const userId = "123";
     formData.append("userId", userId);
 
-    const response = await fetch("http://192.168.1.66:3000/pdfUpload", {
+    const response = await fetch("http://localhost:3000/pdfUpload", {
       method: "POST",
       body: formData,
     });
@@ -86,7 +86,7 @@ const deleteFile = async (fileUniqueName) => {
       return;
     }
     const response = await fetch(
-      `http://192.168.1.66:3000/deleteFile/${fileUniqueName}`,
+      `http://localhost:3000/deleteFile/${fileUniqueName}`,
       {
         method: "DELETE",
       }

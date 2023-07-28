@@ -4,6 +4,8 @@ const newUrl = ref("");
 const urls = ref([]);
 const loading = ref(false);
 const continueFocus = ref(null);
+// mock user id
+const userId = "123";
 
 const uploadUrl = async () => {
   // check if the user has entered a message
@@ -13,20 +15,27 @@ const uploadUrl = async () => {
   loading.value = true;
   // console.log("loading start:" + loading.value);
   try {
-    const response = await fetch("http://192.168.1.66:3000/urlUploadWindow", {
+    const response = await fetch("http://localhost:3000/urlUploadWindow", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ url: newUrl.value }),
+      body: JSON.stringify({ url: newUrl.value, userId: userId }),
     });
 
     if (!response.ok) {
       throw new Error("Failed to upload url");
     }
     const responseJSON = await response.json();
-    console.log(responseJSON.message);
-    urls.value.push(newUrl.value);
+    console.log(
+      responseJSON.message,
+      responseJSON.urlName,
+      responseJSON.userId
+    );
+    urls.value.push({
+      urlPath: newUrl.value,
+      urlName: responseJSON.urlName,
+    });
     newUrl.value = "";
   } catch (error) {
     console.log(error);
@@ -35,6 +44,40 @@ const uploadUrl = async () => {
     await nextTick();
     continueFocus.value.focus();
     // console.log("loading finished:" + loading.value);
+  }
+};
+
+const deleteUrl = async (urlName, userId) => {
+  try {
+    if (!urlName || urlName === "") {
+      console.log("No Url selected");
+      return;
+    }
+
+    const url = new URL(
+      `http://localhost:3000/deleteUrl/${urlName}`
+    );
+    // add userId to query params
+    url.searchParams.append("userId", userId);
+
+    const response = await fetch(url, {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      const errorBody = await response.json();
+      console.log("Error response body: " + errorBody.message);
+      throw new Error("Failed to delete file");
+    }
+
+    const responseJSON = await response.json();
+    console.log(responseJSON.message);
+
+    // remove the file from the array
+    urls.value = urls.value.filter(
+      (url) => url.urlName !== urlName
+    );
+  } catch (error) {
+    console.log(error);
   }
 };
 
@@ -67,7 +110,12 @@ const vFocus = {
         v-for="(url, index) in urls"
         :key="index"
       >
-        <q-item-section>{{ url }}</q-item-section>
+        <q-item-section>{{ url.urlPath }}</q-item-section>
+        <q-btn
+          @click="deleteUrl(url.urlName, userId)"
+          label="X"
+          color="negative"
+        ></q-btn>
       </q-item>
     </q-list>
   </div>

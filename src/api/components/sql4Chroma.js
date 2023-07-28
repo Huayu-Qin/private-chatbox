@@ -24,7 +24,7 @@ const getCollection = async (collection) => {
   });
 };
 // (async () => {
-//   await deleteCollection('userId');
+//   await deleteCollection('123');
 //   const listOfCollections = await collections();
 //   console.log(listOfCollections);
 // })();

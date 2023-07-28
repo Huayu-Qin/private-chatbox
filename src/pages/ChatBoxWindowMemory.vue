@@ -51,7 +51,7 @@ const sendMessage = async (event) => {
       source.close();
     }
     // create a new EventSource to get the real-time data for new message
-    source = new EventSource("http://192.168.1.66:3000/chatMemory");
+    source = new EventSource("http://localhost:3000/chatMemory");
     // create listener for the beginning of the stream
     source.addEventListener("newToken", (event) => {
       // clean up the token
@@ -65,17 +65,25 @@ const sendMessage = async (event) => {
     });
 
     if (realTimeMessage.value) {
-      const reponse = await fetch("http://192.168.1.66:3000/chatRealTime", {
+      const response = await fetch("http://localhost:3000/chatRealTime", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           body: JSON.stringify({ input: input.value }),
         },
       });
+      // check if the response is ok
+      if (!response.ok) {
+        if (response.status === 429) {
+          const errorJSON = await response.json();
+          throw new Error(errorJSON || "Too many requests");
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
     }
 
     //office domain:192.168.1.66
-    const response = await fetch("http://192.168.1.66:3000/chatMemory", {
+    const response = await fetch("http://localhost:3000/chatMemory", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

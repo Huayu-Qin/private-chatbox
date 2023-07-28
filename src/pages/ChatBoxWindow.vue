@@ -27,7 +27,7 @@ const sendMessage = async (event) => {
   });
   // console.log(messages.value);
   try {
-    const response = await fetch("http://192.168.1.66:3000/chatBox", {
+    const response = await fetch("http://localhost:3000/chatBox", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

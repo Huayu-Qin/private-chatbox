@@ -14,7 +14,7 @@ const uploadUrl = async () => {
   loading.value = true;
   // console.log("loading start:" + loading.value);
   try {
-    const response = await fetch("http://192.168.1.66:3000/urlUpload", {
+    const response = await fetch("http://localhost:3000/urlUpload", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
