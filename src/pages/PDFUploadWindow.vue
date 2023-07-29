@@ -41,8 +41,9 @@ const uploadPDF = async () => {
 
     loading.value = true;
     const formData = new FormData();
-
-    formData.append("file", newFiles.value);
+    // set a new file name
+    const newFileName = `${userId}_${newFiles.value.name}`;
+    formData.append("file", newFiles.value, newFileName);
     formData.append("name", newFiles.value.name);
     formData.append("userId", userId);
 
@@ -86,9 +87,7 @@ const deleteFile = async (fileUniqueName, userId) => {
       return;
     }
 
-    const url = new URL(
-      `http://localhost:3000/deleteFile/${fileUniqueName}`
-    );
+    const url = new URL(`http://localhost:3000/deleteFile/${fileUniqueName}`);
     // add userId to query params
     url.searchParams.append("userId", userId);
 
