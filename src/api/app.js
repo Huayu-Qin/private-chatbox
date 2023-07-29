@@ -43,7 +43,8 @@ import { ChromaClient } from "chromadb";
 import { ChatOpenAI } from "langchain/chat_models/openai";
 import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import { RetrievalQAChain } from "langchain/chains";
-
+// sequential chain
+import { SequentialChain } from "langchain/chains";
 // stuff related to the stream
 import SSE from "express-sse";
 import compression from "compression";
@@ -69,7 +70,7 @@ import {
   redisChatMemory,
   vectorStoreWithMemory,
 } from "./components/storeMemory.js";
-import { PromptTemplate } from "langchain";
+import { BasePromptTemplate, PromptTemplate } from "langchain";
 // deprecated
 import {
   getLimitTime,
@@ -159,8 +160,10 @@ app.get("/chatRealTime", sse.init);
 app.post("/chatRealTime", async (req, res) => {
   if (req.method === "POST") {
     const { input } = req.body;
+    // console.log(input);
     const docs = await realTimeSearch(input);
-    const memory = vectorStoreMemory;
+    console.log("search doc: ", docs.length);
+    const memory = conversationSummaryMemory;
     // const vectorDatabase = vectorStoreWithMemory;
     const vectorStore = await MemoryVectorStore.fromDocuments(
       docs,
@@ -168,7 +171,7 @@ app.post("/chatRealTime", async (req, res) => {
     );
     const model = new OpenAI({
       temperature: getTemperature(),
-      modelName: "gpt-3.5-turbo",
+      modelName: "gpt-3.5-turbo-16k",
       streaming: true,
       callbacks: [
         {
@@ -179,25 +182,43 @@ app.post("/chatRealTime", async (req, res) => {
       ],
     });
 
-    const prompt =
-      PromptTemplate.fromTemplate(`The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.
-
-    Relevant pieces of previous conversation:
-    {chat_history}
-
-    (You do not need to use these pieces of information if not relevant)
-
-    Current conversation:
-    Human: {input}
-    AI:`);
+    // const prompt = new BasePromptTemplate({
+    //   prompts:
+    //     `You need to say 'Hi,darling' as you prefix words in the reply. The question is: ${input}`,
+    // });
+    // const formattedPrompt = await prompt.format({ input: input });
     // use the conversationSummaryMemory and vectorStoreMemory
     // to store the conversation by LLMChain
     // const chain = new LLMChain({ llm: model, prompt: prompt, memory: memory });
 
     // use the bufferMemory and redis to store the conversation by ConversationChain
-    const chain = new ConversationChain({ llm: model, memory: memory });
+    // const memoryChain = new LLMChain({
+    //   llm: model,
+    //   prompt: prompt,
+    //   memory: memory,
+    // });
 
-    await chain.call({ input }).then(() => {
+    const searchChain = RetrievalQAChain.fromLLM(
+      model,
+      vectorStore.asRetriever(),
+      // {
+        // prompt: prompt,
+        // verbose: true,
+        // returnSourceDocuments: true,
+      // }
+    );
+    // const chain = ConversationalRetrievalQAChain.fromLLM(
+    //   model,
+    //   vectorStore.asRetriever(),
+    //   {
+    //     returnSourceDocuments: true,
+    //     memory: memory,
+    //     qaTemplate: formattedPrompt,
+    //     outputKey: "answer",
+    //   }
+    // );
+    
+    await searchChain.call({ query: input }).then(() => {
       sse.send(null, "stop");
     });
     // const response = await chain.call({ input });
@@ -314,17 +335,15 @@ app.post("/pdfUpload", multerPDF().single("file"), async (req, res) => {
 app.post("/urlUploadWindow", async (req, res) => {
   try {
     const { url, userId } = req.body;
-    const UniqueName = url.split('.')[1] + Date.now();
+    const UniqueName = url.split(".")[1] + Date.now();
     await uploadURLWindow([url], UniqueName, userId);
 
     console.log("Upload finished");
-    return res
-      .status(200)
-      .json({
-        message: "Upload finished",
-        urlName: UniqueName,
-        userId: userId,
-      });
+    return res.status(200).json({
+      message: "Upload finished",
+      urlName: UniqueName,
+      userId: userId,
+    });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

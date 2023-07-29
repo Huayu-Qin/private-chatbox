@@ -69,8 +69,8 @@ const sendMessage = async (event) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          body: JSON.stringify({ input: input.value }),
         },
+        body: JSON.stringify({ input: input.value }),
       });
       // check if the response is ok
       if (!response.ok) {
@@ -80,6 +80,7 @@ const sendMessage = async (event) => {
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+      return;
     }
 
     //office domain:192.168.1.66
@@ -222,13 +223,13 @@ onUnmounted(() => {
           <!-- <q-tbn class="floating-button" @click="toggleChat" label="Chat" /> -->
         </div>
         <!-- floating button -->
-        <!-- <div class="config-board">
+        <div class="config-board">
           <q-checkbox
             indeterminate-value="maybe"
             v-model="realTimeMessage"
             label="Click to get real-time information"
           />
-        </div> -->
+        </div>
       </q-page>
     </q-page-container>
   </q-layout>

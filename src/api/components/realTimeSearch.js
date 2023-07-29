@@ -1,5 +1,5 @@
 import { SerpAPILoader } from "langchain/document_loaders/web/serpapi";
-
+import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 export default async function realTimeSearch(query) {
   const searchMessage = query;
   const loader = new SerpAPILoader({
@@ -8,6 +8,9 @@ export default async function realTimeSearch(query) {
   });
 
   const docs = await loader.load();
-
-  return docs;
+  const splitter = new RecursiveCharacterTextSplitter({
+    chunkSize: 8000
+  });
+  const splitDocs = await splitter.splitDocuments(docs);
+  return splitDocs;
 }
