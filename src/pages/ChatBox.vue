@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, nextTick, onMounted } from "vue";
+import { ref, watch, watchEffect, nextTick, onMounted } from "vue";
 
 const widgetGreetingMessage = ref("Hello! How can I help you?");
 const messages = ref([{ text: widgetGreetingMessage, type: "bot" }]);
@@ -51,13 +51,18 @@ const getWidgetConfig = async () => {
 };
 
 // contact form
-const sendContactDetails = () => {
+const sendContactDetails = async () => {
   if (emailAddress.value.trim() || phoneNumber.value.trim()) {
-    setTimeout(() => {
+    setTimeout(async () => {
       messages.value.push({
         text: "Thank you for your contact details, we will contact you soon.",
         type: "bot",
       });
+      // trigger the scroll to the bottom of the chat window
+      // watch function got issue after getting the chat history
+      // from the database when the chat window is opened.
+      await nextTick();
+      chatWindow.value.scrollTop = chatWindow.value.scrollHeight;
     }, 1500);
   }
   isContactOpen.value = false;
@@ -82,6 +87,11 @@ const sendMessage = async (event) => {
     text: input.value,
     type: "user",
   });
+  // trigger the scroll to the bottom of the chat window
+  // watch function got issue after getting the chat history
+  // from the database when the chat window is opened.
+  await nextTick();
+  chatWindow.value.scrollTop = chatWindow.value.scrollHeight;
   // console.log(messages.value);
   try {
     const response = await fetch("http://localhost:3000/chat", {
@@ -108,7 +118,12 @@ const sendMessage = async (event) => {
     });
 
     // update the chat history to the database and scroll to the bottom of the chat window
-    await updateChatMessageDB()
+    await updateChatMessageDB();
+    // trigger the scroll to the bottom of the chat window
+    // watch function got issue after getting the chat history
+    // from the database when the chat window is opened.
+    await nextTick();
+    chatWindow.value.scrollTop = chatWindow.value.scrollHeight;
     // .then(() => {
     //   chatWindow.value.scrollTop = chatWindow.value.scrollHeight;
     // });
@@ -154,7 +169,7 @@ const getChatMessage = async () => {
 const updateChatMessageDB = async () => {
   try {
     // save the file list to the database
-    await fetch("http://localhost:3000/chatMessage", {
+    const responseDB = await fetch("http://localhost:3000/chatMessage", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -164,15 +179,34 @@ const updateChatMessageDB = async () => {
         messages: messages.value,
       }),
     });
-    // if (!responseDB.ok) {
-    //   const errorBody = await responseDB.text();
-    //   console.log("Error response body :" + errorBody);
-    //   throw new Error("Failed to save file list");
-    // }
-    // const responseDBJSON = await responseDB.json();
-    // console.log(responseDBJSON.chatMessage);
+    if (!responseDB.ok) {
+      const errorBody = await responseDB.text();
+      console.log("Error response body :" + errorBody);
+      throw new Error("Failed to save file list");
+    }
+    const responseDBJSON = await responseDB.json();
+    console.log(responseDBJSON.chatMessage);
   } catch (error) {
     console.log(error);
+  }
+};
+
+const clearChatHistory = async () => {
+  try {
+    const response = await fetch(
+      `http://localhost:3000/chatMessage/${userId}`,
+      {
+        method: "DELETE",
+      }
+    );
+    if (!response.ok) {
+      throw new Error(`Http error! status:${response.status}`);
+    }
+    const responseJSON = await response.json();
+    console.log(responseJSON.message);
+    messages.value = [];
+  } catch (error) {
+    console.log("ERROR:" + error);
   }
 };
 
@@ -207,10 +241,10 @@ onMounted(async () => {
   // get the chat history from the database
   await getChatMessage();
   // delay the execution of the code until the DOM is updated
-  nextTick(() => {
-    // scroll to the bottom of the chat Window
-    chatWindow.value.scrollTop = chatWindow.value.scrollHeight;
-  });
+  // nextTick(() => {
+  //   // scroll to the bottom of the chat Window
+  //   chatWindow.value.scrollTop = chatWindow.value.scrollHeight;
+  // });
 });
 
 // detect the messages array for changes
@@ -312,6 +346,9 @@ watch(
                   @click="isContactOpen = !isContactOpen"
                 >
                   Click here to request a callback
+                </button>
+                <button class="clear-button" @click="clearChatHistory">
+                  Clear chat history
                 </button>
               </div>
             </div>
@@ -448,6 +485,29 @@ watch(
 }
 
 .contact-button:hover {
+  background-color: #eee;
+  color: rgb(74, 74, 74);
+  /* font-weight: normal; */
+}
+
+.clear-button {
+  /* padding: auto 0.5rem; */
+  font-weight: bold;
+  position: absolute;
+  /* bottom: 1.2rem; */
+  bottom: 0.2rem;
+  right: 1.2rem;
+  border: 1px solid white;
+  border-radius: 0.5rem;
+  /* box-shadow: 1px 1px 2px rgba(96, 89, 89, 0.3); */
+  background-color: white;
+  /* rgb(74, 74, 74) */
+  /* color: lightblue; */
+  color: var(--widget-hint-color, lightblue);
+  transition: all 0.2s ease-in-out;
+}
+
+.clear-button:hover {
   background-color: #eee;
   color: rgb(74, 74, 74);
   /* font-weight: normal; */
