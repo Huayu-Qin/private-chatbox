@@ -81,10 +81,12 @@ import {
   setRequestPreventMessage,
 } from "./components/systemConfig.js";
 
+import fs from "fs";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import mongoose from "mongoose";
 import { UserConfig } from "../db/userConfig.js";
+import { FileList } from "../db/fileList.js";
 
 dotenv.config({ path: "../../.env" });
 
@@ -409,110 +411,109 @@ app.delete("/deleteFile/:fileName", (req, res) => {
   deleteDocument(userId, fileName);
 });
 
-app.post("/setApiKey", (req, res) => {
-  const { apiKey } = req.body;
-  process.env.OPENAI_API_KEY = apiKey;
-  return res.status(200).json({ message: "API key updated" });
-});
+// app.post("/setApiKey", (req, res) => {
+//   const { apiKey } = req.body;
+//   process.env.OPENAI_API_KEY = apiKey;
+//   return res.status(200).json({ message: "API key updated" });
+// });
 
-app.get("/getApiKey", (req, res) => {
-  res.json({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-});
+// app.get("/getApiKey", (req, res) => {
+//   res.json({
+//     apiKey: process.env.OPENAI_API_KEY,
+//   });
+// });
 
-app.post("/setTemperature", (req, res) => {
-  const { temperature } = req.body;
-  setTemperature(temperature);
+// app.post("/setTemperature", (req, res) => {
+//   const { temperature } = req.body;
+//   setTemperature(temperature);
 
-  return res.status(200).json({ message: "Temperature updated" });
-});
+//   return res.status(200).json({ message: "Temperature updated" });
+// });
 
-app.get("/getTemperature", (req, res) => {
-  res.json({
-    temperature: getTemperature(),
-  });
-});
+// app.get("/getTemperature", (req, res) => {
+//   res.json({
+//     temperature: getTemperature(),
+//   });
+// });
 
-app.post("/setUserPrompt", (req, res) => {
-  const { userPrompt } = req.body;
-  setUserPrompt(userPrompt);
-  return res.status(200).json({ message: "UserPrompt updated" });
-});
+// app.post("/setUserPrompt", (req, res) => {
+//   const { userPrompt } = req.body;
+//   setUserPrompt(userPrompt);
+//   return res.status(200).json({ message: "UserPrompt updated" });
+// });
 
-app.get("/getUserPrompt", (req, res) => {
-  res.json({
-    userPrompt: getUserPrompt(),
-  });
-});
+// app.get("/getUserPrompt", (req, res) => {
+//   res.json({
+//     userPrompt: getUserPrompt(),
+//   });
+// });
 
-app.get("/getLimiterConfig", (req, res) => {
-  res.json(config);
-});
+// app.get("/getLimiterConfig", (req, res) => {
+//   res.json(config);
+// });
 
-app.post("/uploadLimiterConfig", (req, res) => {
-  // update the config
-  config.windowMs = req.body.windowMs;
-  config.max = req.body.max;
-  config.message = req.body.message;
-  console.log(config.max, config.windowMs, config.message);
-  // update the limiter
-  ChatRateLimiter = rateLimit(config);
+// app.post("/uploadLimiterConfig", (req, res) => {
+//   // update the config
+//   config.windowMs = req.body.windowMs;
+//   config.max = req.body.max;
+//   config.message = req.body.message;
+//   console.log(config.max, config.windowMs, config.message);
+//   // update the limiter
+//   ChatRateLimiter = rateLimit(config);
 
-  res.json(config);
-});
+//   res.json(config);
+// });
 
-app.post("/setWidgetConfig", (req, res) => {
-  const {
-    widgetGreetingMessage,
-    widgetBorderColor,
-    widgetButtonColor,
-    widgetHintColor,
-    widgetMessageColor,
-  } = req.body;
-  setWidgetGreetingMessage(widgetGreetingMessage);
-  setWidgetBorderColor(widgetBorderColor);
-  setWidgetButtonColor(widgetButtonColor);
-  setWidgetHintColor(widgetHintColor);
-  setWidgetMessageColor(widgetMessageColor);
+// app.post("/setWidgetConfig", (req, res) => {
+//   const {
+//     widgetGreetingMessage,
+//     widgetBorderColor,
+//     widgetButtonColor,
+//     widgetHintColor,
+//     widgetMessageColor,
+//   } = req.body;
+//   setWidgetGreetingMessage(widgetGreetingMessage);
+//   setWidgetBorderColor(widgetBorderColor);
+//   setWidgetButtonColor(widgetButtonColor);
+//   setWidgetHintColor(widgetHintColor);
+//   setWidgetMessageColor(widgetMessageColor);
 
-  return res.status(200).json({ message: "Widget config updated" });
-});
+//   return res.status(200).json({ message: "Widget config updated" });
+// });
 
-app.get("/getWidgetConfig", (req, res) => {
-  res.json({
-    widgetGreetingMessage: getWidgetGreetingMessage(),
-    widgetBorderColor: getWidgetBorderColor(),
-    widgetButtonColor: getWidgetButtonColor(),
-    widgetHintColor: getWidgetHintColor(),
-    widgetMessageColor: getWidgetMessageColor(),
-  });
-});
-// save the config in the env file before the server is closed
-// "beforeExit" is for the server closed normal as "SIGTERM". In terminal, it is 'kill 12345'
-// "SIGINT" is for the server closed by "Ctrl+C" in terminal
-import fs from "fs";
+// app.get("/getWidgetConfig", (req, res) => {
+//   res.json({
+//     widgetGreetingMessage: getWidgetGreetingMessage(),
+//     widgetBorderColor: getWidgetBorderColor(),
+//     widgetButtonColor: getWidgetButtonColor(),
+//     widgetHintColor: getWidgetHintColor(),
+//     widgetMessageColor: getWidgetMessageColor(),
+//   });
+// });
+// // save the config in the env file before the server is closed
+// // "beforeExit" is for the server closed normal as "SIGTERM". In terminal, it is 'kill 12345'
+// // "SIGINT" is for the server closed by "Ctrl+C" in terminal
 
-process.on("SIGINT", () => {
-  // load the env config
-  const envConfig = dotenv.parse(
-    fs.readFileSync("/Users/huayuqin/quasar-project/.env")
-  );
+// process.on("SIGINT", () => {
+//   // load the env config
+//   const envConfig = dotenv.parse(
+//     fs.readFileSync("/Users/huayuqin/quasar-project/.env")
+//   );
 
-  // modify the config in the process
-  envConfig.RATE_LIMIT_WINDOW = config.windowMs;
-  envConfig.RATE_LIMIT_MAX = config.max;
-  envConfig.RATE_LIMIT_MESSAGE = config.message;
+//   // modify the config in the process
+//   envConfig.RATE_LIMIT_WINDOW = config.windowMs;
+//   envConfig.RATE_LIMIT_MAX = config.max;
+//   envConfig.RATE_LIMIT_MESSAGE = config.message;
 
-  // format the environment config to be written to the file
-  const envConfigString = Object.entries(envConfig)
-    .map(([key, value]) => `${key}=${value}`)
-    .join("\n");
-  // write the config to the file
-  fs.writeFileSync("/Users/huayuqin/quasar-project/.env", envConfigString);
-  // exit the process
-  process.exit();
-});
+//   // format the environment config to be written to the file
+//   const envConfigString = Object.entries(envConfig)
+//     .map(([key, value]) => `${key}=${value}`)
+//     .join("\n");
+//   // write the config to the file
+//   fs.writeFileSync("/Users/huayuqin/quasar-project/.env", envConfigString);
+//   // exit the process
+//   process.exit();
+// });
 
 app.post("/userConfig", async (req, res) => {
   try {
@@ -565,59 +566,42 @@ app.get("/userConfig/:userId", async (req, res) => {
   }
 });
 
-// app.post("/setLimitTime", (req, res) => {
-//   const { limitTime } = req.body;
-//   setLimitTime(limitTime);
+app.post("/fileList", async (req, res) => {
+  const { userId, files } = req.body;
+  try {
+    const fileList = await FileList.findOneAndUpdate(
+      { userId },
+      { userId, fileList: files },
+      { new: true, runValidators: true, upsert: true }
+    );
+    if (fileList) {
+      res.send(fileList);
+    } else {
+      res.status(404).send({ error: "File list not found" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ error: "Could not update file list" });
+  }
+});
 
-//   return res.status(200).json({ message: "limitTime updated" });
-// });
-
-// app.get("/getLimitTime", (req, res) => {
-//   res.json({
-//     limitTime: getLimitTime(),
-//   });
-// });
-
-// app.get("/getMaxRequest", (req, res) => {
-//   res.json({
-//     maxRequest: getMaxRequest(),
-//   });
-// });
-
-// app.post("/setMaxRequest", (req, res) => {
-//   const { maxRequest } = req.body;
-//   setMaxRequest(maxRequest);
-
-//   return res.status(200).json({ message: "MaxRequest updated" });
-// });
-
-// app.get("/getRequestPreventMessage", (req, res) => {
-//   res.json({
-//     requestPreventMessage: getRequestPreventMessage(),
-//   });
-// });
-
-// app.post("/setRequestPreventMessage", (req, res) => {
-//   const { requestPreventMessage } = req.body;
-//   setRequestPreventMessage(requestPreventMessage);
-
-//   return res.status(200).json({ message: "requestPreventMessage updated" });
-// });
+app.get("/fileList/:userId", async (req, res) => {
+  try {
+    const fileList = await FileList.findOne({ userId: req.params.userId });
+    if (fileList) {
+      res.send(fileList);
+    } else {
+      res.status(404).send({ error: "File list not found" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ error: "Could not retrieve file list" });
+  }
+});
 
 // 0.0.0.0 is for the server to listen to all the IP addresses
 app.listen(port, "0.0.0.0", () => {
   console.log(`Server running on port ${port}`);
-});
-
-// connect to MongoDB
-mongoose.connect("mongodb://localhost:27017/userConfig", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
-const userConfig = mongoose.connection;
-userConfig.on("error", console.error.bind(console, "connection error:"));
-userConfig.once("open", function () {
-  console.log("Connected to MongoDB");
 });
 
 /* Delete the data in the Pinecone database

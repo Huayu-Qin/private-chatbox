@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 const newFiles = ref(null);
 const files = ref([]);
 const loading = ref(false);
@@ -69,6 +69,8 @@ const uploadPDF = async () => {
     // set the status of the file to success
     files.value[files.value.length - 1].status = "success";
     files.value[files.value.length - 1].UniqueName = responseJSON.fileName;
+    // update the file list to the database
+    await updateFileListDB();
 
     newFiles.value = null;
     loading.value = false;
@@ -107,10 +109,63 @@ const deleteFile = async (fileUniqueName, userId) => {
     files.value = files.value.filter(
       (file) => file.UniqueName !== fileUniqueName
     );
+
+    // update the file list to the database
+    await updateFileListDB();
   } catch (error) {
     console.log(error);
   }
 };
+
+const getFileList = async () => {
+  try {
+    const response = await fetch(`http://localhost:3000/fileList/${userId}`);
+    const responseJSON = await response.json();
+    if (!response.ok) {
+      throw new Error(`Http error! status:${response.status}`);
+    }
+    console.log(responseJSON);
+    files.value = responseJSON.fileList.map((file) => {
+      return {
+        name: file.name,
+        status: "success",
+        UniqueName: file.UniqueName,
+      };
+    });
+  } catch (error) {
+    console.log("ERROR:" + error);
+    return;
+  }
+};
+
+const updateFileListDB = async () => {
+  try {
+    // save the file list to the database
+    const responseDB = await fetch("http://localhost:3000/fileList", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: userId,
+        files: files.value,
+      }),
+    });
+    if (!responseDB.ok) {
+      const errorBody = await responseDB.text();
+      console.log("Error response body :" + errorBody);
+      throw new Error("Failed to save file list");
+    }
+    const responseDBJSON = await responseDB.json();
+    console.log(responseDBJSON.fileList);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+onMounted(() => {
+  getFileList();
+});
 </script>
 <template>
   <div class="q-pa-md">

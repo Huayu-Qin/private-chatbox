@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import { defaultUserConfig } from "../api/components/exportConsts.js";
+import { userConfigConnection } from "./db.js";
+
 const userConfigSchema = new mongoose.Schema({
   userId: { type: String, required: true, unique: true },
   openaiAPIKey: {
@@ -69,4 +71,7 @@ const userConfigSchema = new mongoose.Schema({
   },
 });
 
-export const UserConfig = mongoose.model("UserConfig", userConfigSchema);
+export const UserConfig = userConfigConnection.model(
+  "UserConfig",
+  userConfigSchema
+);
