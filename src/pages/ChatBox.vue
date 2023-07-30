@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch, nextTick, onMounted } from "vue";
 
-const widgetGreetingMessage = ref("");
+const widgetGreetingMessage = ref("Hello! How can I help you?");
 const messages = ref([{ text: widgetGreetingMessage, type: "bot" }]);
 const input = ref("");
 // floating button state
@@ -20,6 +20,8 @@ const widgetBorderColor = ref("");
 const widgetButtonColor = ref("");
 const widgetHintColor = ref("");
 const widgetMessageColor = ref("");
+// mock user id
+const userId = "123";
 
 // set Widget config
 const setStyleVar = (varName, varValue) => {
@@ -35,7 +37,7 @@ const applyWidgetConfig = () => {
 
 const getWidgetConfig = async () => {
   try {
-    const response = await fetch("http://localhost:3000/getWidgetConfig");
+    const response = await fetch(`http://localhost:3000/userConfig/${userId}`);
     const responseJSON = await response.json();
     widgetGreetingMessage.value = responseJSON.widgetGreetingMessage;
     widgetBorderColor.value = responseJSON.widgetBorderColor;
@@ -104,6 +106,12 @@ const sendMessage = async (event) => {
       text: responseJSON.result.text,
       type: "bot",
     });
+
+    // update the chat history to the database and scroll to the bottom of the chat window
+    await updateChatMessageDB()
+    // .then(() => {
+    //   chatWindow.value.scrollTop = chatWindow.value.scrollHeight;
+    // });
   } catch (error) {
     console.log("ERROR:" + error);
     messages.value.push({
@@ -121,6 +129,53 @@ const sendMessage = async (event) => {
     continueFocus.value.focus();
   }
 };
+
+// get chat history from the database
+const getChatMessage = async () => {
+  try {
+    const response = await fetch(`http://localhost:3000/chatMessage/${userId}`);
+    const responseJSON = await response.json();
+    if (!response.ok) {
+      throw new Error(`Http error! status:${response.status}`);
+    }
+    console.log(responseJSON);
+    messages.value = responseJSON.chatMessage.map((message) => {
+      return {
+        text: message.text,
+        type: message.type,
+      };
+    });
+  } catch (error) {
+    console.log("ERROR:" + error);
+    return;
+  }
+};
+
+const updateChatMessageDB = async () => {
+  try {
+    // save the file list to the database
+    await fetch("http://localhost:3000/chatMessage", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: userId,
+        messages: messages.value,
+      }),
+    });
+    // if (!responseDB.ok) {
+    //   const errorBody = await responseDB.text();
+    //   console.log("Error response body :" + errorBody);
+    //   throw new Error("Failed to save file list");
+    // }
+    // const responseDBJSON = await responseDB.json();
+    // console.log(responseDBJSON.chatMessage);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 // Press enter + shift to get a new line
 const insertNewLine = (event) => {
   // event.preventDefault();
@@ -149,7 +204,8 @@ const vFocus = {
 onMounted(async () => {
   // set the widget config
   await getWidgetConfig();
-
+  // get the chat history from the database
+  await getChatMessage();
   // delay the execution of the code until the DOM is updated
   nextTick(() => {
     // scroll to the bottom of the chat Window

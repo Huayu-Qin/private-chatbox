@@ -35,3 +35,15 @@ urlListConnection.on(
 urlListConnection.once("open", function () {
   console.log("Connected to MongoDB:urlList");
 });
+
+export const chatMessageConnection = mongoose.createConnection(
+  "mongodb://localhost:27017/chatMessage",
+  { useNewUrlParser: true, useUnifiedTopology: true }
+);
+chatMessageConnection.on(
+  "error",
+  console.error.bind(console, "connecttion error:")
+);
+chatMessageConnection.once("open", function () {
+  console.log("Connected to MongoDB:chatMessage");
+});

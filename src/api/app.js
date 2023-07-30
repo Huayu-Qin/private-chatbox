@@ -88,6 +88,7 @@ import mongoose from "mongoose";
 import { UserConfig } from "../db/userConfig.js";
 import { FileList } from "../db/fileList.js";
 import { UrlList } from "../db/urlList.js";
+import { ChatMessage } from "../db/chatMessage.js";
 
 dotenv.config({ path: "../../.env" });
 
@@ -630,6 +631,57 @@ app.get("/urlList/:userId", async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).send({ error: "Could not retrieve url list" });
+  }
+});
+
+app.post("/chatMessage", async (req, res) => {
+  const { userId, messages } = req.body;
+  try {
+    const chatMessage = await ChatMessage.findOneAndUpdate(
+      { userId },
+      { userId, chatMessage: messages },
+      { new: true, runValidators: true, upsert: true }
+    );
+    if (chatMessage) {
+      res.send(chatMessage);
+    } else {
+      res.status(404).send({ error: "Chat message not found" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ error: "Could not update chat message" });
+  }
+});
+
+app.get("/chatMessage/:userId", async (req, res) => {
+  try {
+    const chatMessage = await ChatMessage.findOne({
+      userId: req.params.userId,
+    });
+    if (chatMessage) {
+      res.send(chatMessage);
+    } else {
+      res.status(404).send({ error: "Chat message not found" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ error: "Could not retrieve chat message" });
+  }
+});
+
+app.delete("/chatMessage/:userId", async (req, res) => {
+  const userId = req.params.userId;
+  try {
+    const result = await ChatMessage.deleteOne({ userId });
+
+    if (result.deletedCount === 1) {
+      res.send({ message: "Chat message deleted" });
+    } else {
+      res.status(404).send({ error: "Chat message not found" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ error: "Could not delete chat message" });
   }
 });
 
