@@ -83,6 +83,7 @@ import {
 
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
+import mongoose from "mongoose";
 
 dotenv.config({ path: "../../.env" });
 
@@ -200,11 +201,11 @@ app.post("/chatRealTime", async (req, res) => {
 
     const searchChain = RetrievalQAChain.fromLLM(
       model,
-      vectorStore.asRetriever(),
+      vectorStore.asRetriever()
       // {
-        // prompt: prompt,
-        // verbose: true,
-        // returnSourceDocuments: true,
+      // prompt: prompt,
+      // verbose: true,
+      // returnSourceDocuments: true,
       // }
     );
     // const chain = ConversationalRetrievalQAChain.fromLLM(
@@ -217,7 +218,7 @@ app.post("/chatRealTime", async (req, res) => {
     //     outputKey: "answer",
     //   }
     // );
-    
+
     await searchChain.call({ query: input }).then(() => {
       sse.send(null, "stop");
     });
@@ -555,6 +556,26 @@ process.on("SIGINT", () => {
 app.listen(port, "0.0.0.0", () => {
   console.log(`Server running on port ${port}`);
 });
+
+// connect to MongoDB
+mongoose.connect("mongodb://localhost:27017/userConfig", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+const userConfig = mongoose.connection;
+userConfig.on("error", console.error.bind(console, "connection error:"));
+userConfig.once("open", function () {
+  console.log("Connected to MongoDB");
+});
+
+
+
+
+
+
+
+
+
 
 /* Delete the data in the Pinecone database
 

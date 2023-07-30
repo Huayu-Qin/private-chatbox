@@ -31,6 +31,7 @@
     "html-to-text": "^9.0.5",
     "langchain": "^0.0.118",
     "mammoth": "^1.6.0",
+    "mongoose": "^7.4.1",
     "multer": "^1.4.5-lts.1",
     "node-spider": "^1.4.1",
     "nodemon": "^3.0.1",
