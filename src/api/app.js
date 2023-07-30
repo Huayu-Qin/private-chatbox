@@ -84,6 +84,7 @@ import {
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import mongoose from "mongoose";
+import { UserConfig } from "../db/userConfig.js";
 
 dotenv.config({ path: "../../.env" });
 
@@ -513,6 +514,57 @@ process.on("SIGINT", () => {
   process.exit();
 });
 
+app.post("/userConfig", async (req, res) => {
+  try {
+    const existingUserConfig = await UserConfig.findOne({
+      userId: req.body.userId,
+    });
+    if (existingUserConfig) {
+      res.status(400).send({ error: "User config already exists" });
+    } else {
+      // initialize the user config in the databas
+      const userConfig = new UserConfig({ userId: req.body.userId });
+      await userConfig.save();
+      console.log("User config saved");
+      res.status(201).send(userConfig);
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(400).send({ error: "Could not save user config" });
+  }
+});
+
+app.put("/userConfig/:userId", async (req, res) => {
+  try {
+    const userConfig = await UserConfig.findOneAndUpdate(
+      { userId: req.params.userId },
+      req.body,
+      { new: true, runValidators: true, upsert: true }
+    );
+    if (userConfig) {
+      res.send(userConfig);
+    } else {
+      res.status(404).send({ error: "User config not found" });
+    }
+  } catch (error) {
+    res.status(500).send({ error: "Could not update user config" });
+  }
+});
+
+app.get("/userConfig/:userId", async (req, res) => {
+  try {
+    const userConfig = await UserConfig.findOne({ userId: req.params.userId });
+    if (userConfig) {
+      res.send(userConfig);
+    } else {
+      res.status(404).send({ error: "User config not found" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ error: "Could not retrieve user config" });
+  }
+});
+
 // app.post("/setLimitTime", (req, res) => {
 //   const { limitTime } = req.body;
 //   setLimitTime(limitTime);
@@ -567,15 +619,6 @@ userConfig.on("error", console.error.bind(console, "connection error:"));
 userConfig.once("open", function () {
   console.log("Connected to MongoDB");
 });
-
-
-
-
-
-
-
-
-
 
 /* Delete the data in the Pinecone database
 

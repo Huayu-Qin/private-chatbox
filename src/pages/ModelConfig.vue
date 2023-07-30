@@ -12,6 +12,7 @@ let widgetMessageColor = ref("");
 let widgetHintColor = ref("");
 let widgetButtonColor = ref("");
 let widgetGreetingMessage = ref("");
+const userId = "123";
 
 // detect if the input is not formatted correctly
 const temperatureError = ref(false);
@@ -23,14 +24,48 @@ const limitTimeInMinutes = computed({
   set: (value) => (limitTime.value = value * 60 * 1000),
 });
 
-const submitAPIKey = async () => {
+const setUserConfig = async () => {
   try {
-    const response = await fetch("http://localhost:3000/setApiKey", {
+    const response = await fetch("http://localhost:3000/userConfig", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ apiKey: openaiAPIKey.value }),
+      body: JSON.stringify({ userId: userId }),
+    });
+    if (!response.ok) {
+      throw new Error(`Http error! status:${response.status}`);
+    }
+
+    const responseJSON = await response.json();
+    console.log(responseJSON);
+  } catch (error) {
+    console.log("ERROR:" + error);
+  }
+};
+
+const updateUserConfig = async () => {
+  const dataToUpdata = {
+    userId: userId,
+    openaiAPIKey: openaiAPIKey.value,
+    temperature: temperature.value,
+    userPrompt: userPrompt.value,
+    maxRequest: maxRequest.value,
+    limitTime: limitTime.value,
+    requestPreventMessage: requestPreventMessage.value,
+    widgetBorderColor: widgetBorderColor.value,
+    widgetMessageColor: widgetMessageColor.value,
+    widgetHintColor: widgetHintColor.value,
+    widgetButtonColor: widgetButtonColor.value,
+    widgetGreetingMessage: widgetGreetingMessage.value,
+  };
+  try {
+    const response = await fetch(`http://localhost:3000/userConfig/${userId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(dataToUpdata),
     });
 
     if (!response.ok) {
@@ -44,256 +79,43 @@ const submitAPIKey = async () => {
   }
 };
 
-const submitTemperature = async () => {
+const getUserConfig = async () => {
   try {
-    const response = await fetch("http://localhost:3000/setTemperature", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ temperature: temperature.value }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Http error! status:${response.status}`);
-    }
-
+    const response = await fetch(`http://localhost:3000/userConfig/${userId}`);
     const responseJSON = await response.json();
-    console.log(responseJSON);
+    if (response.ok) {
+      console.log(responseJSON);
+      openaiAPIKey.value = responseJSON.openaiAPIKey;
+      temperature.value = responseJSON.temperature;
+      userPrompt.value = responseJSON.userPrompt;
+      maxRequest.value = responseJSON.maxRequest;
+      limitTime.value = responseJSON.limitTime;
+      requestPreventMessage.value = responseJSON.requestPreventMessage;
+      widgetBorderColor.value = responseJSON.widgetBorderColor;
+      widgetMessageColor.value = responseJSON.widgetMessageColor;
+      widgetHintColor.value = responseJSON.widgetHintColor;
+      widgetButtonColor.value = responseJSON.widgetButtonColor;
+      widgetGreetingMessage.value = responseJSON.widgetGreetingMessage;
+      return true;
+    } else {
+      return false;
+    }
   } catch (error) {
     console.log("ERROR:" + error);
+    return false;
   }
 };
-
-const submitUserPrompt = async () => {
-  try {
-    const response = await fetch("http://localhost:3000/setUserPrompt", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ userPrompt: userPrompt.value }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Http error! status:${response.status}`);
-    }
-
-    const responseJSON = await response.json();
-    console.log(responseJSON);
-  } catch (error) {
-    console.log("ERROR:" + error);
-  }
-};
-
-const submitLimiterConfig = async () => {
-  try {
-    const response = await fetch(
-      "http://localhost:3000/uploadLimiterConfig",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          windowMs: limitTime.value,
-          max: maxRequest.value,
-          message: requestPreventMessage.value,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Http error! status:${response.status}`);
-    }
-
-    const responseJSON = await response.json();
-    console.log(responseJSON);
-  } catch (error) {
-    console.log("ERROR:" + error);
-  }
-};
-
-const submitWidgetConfig = async () => {
-  try {
-    const response = await fetch("http://localhost:3000/setWidgetConfig", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        widgetGreetingMessage: widgetGreetingMessage.value,
-        widgetBorderColor: widgetBorderColor.value,
-        widgetButtonColor: widgetButtonColor.value,
-        widgetHintColor: widgetHintColor.value,
-        widgetMessageColor: widgetMessageColor.value,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Http error! status:${response.status}`);
-    }
-
-    const responseJSON = await response.json();
-    console.log(responseJSON);
-  } catch (error) {
-    console.log("ERROR:" + error);
-  }
-};
-// const submitMaxRequest = async () => {
-//   try {
-//     const response = await fetch("http://localhost:3000/setMaxRequest", {
-//       method: "POST",
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//       body: JSON.stringify({ maxRequest: maxRequest.value }),
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`Http error! status:${response.status}`);
-//     }
-
-//     const responseJSON = await response.json();
-//     console.log(responseJSON);
-//   } catch (error) {
-//     console.log("ERROR:" + error);
-//   }
-// };
-
-// const submitLimitTime = async () => {
-//   try {
-//     const response = await fetch("http://localhost:3000/setLimitTime", {
-//       method: "POST",
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//       body: JSON.stringify({ limitTime: limitTime.value }),
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`Http error! status:${response.status}`);
-//     }
-
-//     const responseJSON = await response.json();
-//     console.log(responseJSON);
-//   } catch (error) {
-//     console.log("ERROR:" + error);
-//   }
-// };
-
-// const submitRequestPreventMessage = async () => {
-//   try {
-//     const response = await fetch(
-//       "http://localhost:3000/setRequestPreventMessage",
-//       {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify({
-//           requestPreventMessage: requestPreventMessage.value,
-//         }),
-//       }
-//     );
-
-//     if (!response.ok) {
-//       throw new Error(`Http error! status:${response.status}`);
-//     }
-
-//     const responseJSON = await response.json();
-//     console.log(responseJSON);
-//   } catch (error) {
-//     console.log("ERROR:" + error);
-//   }
-// };
-
-const getAPIKey = async () => {
-  const response = await fetch("http://localhost:3000/getApiKey");
-  const responseJSON = await response.json();
-  console.log(responseJSON);
-  openaiAPIKey.value = responseJSON.apiKey;
-};
-
-const getTemperature = async () => {
-  const response = await fetch("http://localhost:3000/getTemperature");
-  const responseJSON = await response.json();
-  console.log(responseJSON);
-  temperature.value = responseJSON.temperature;
-};
-
-const getUserPrompt = async () => {
-  const response = await fetch("http://localhost:3000/getUserPrompt");
-  const responseJSON = await response.json();
-  console.log(responseJSON);
-  userPrompt.value = responseJSON.userPrompt;
-};
-
-const getLimiterConfig = async () => {
-  const response = await fetch("http://localhost:3000/getLimiterConfig");
-  const { windowMs, max, message } = await response.json();
-  console.log(windowMs, max, message);
-  limitTime.value = windowMs;
-  maxRequest.value = max;
-  // console.log(typeof(message))
-  requestPreventMessage.value = message;
-  // console.log(response.json())
-};
-
-const getWidgetConfig = async () => {
-  const response = await fetch("http://localhost:3000/getWidgetConfig");
-  const responseJSON = await response.json();
-  widgetGreetingMessage.value = responseJSON.widgetGreetingMessage;
-  widgetBorderColor.value = responseJSON.widgetBorderColor;
-  widgetButtonColor.value = responseJSON.widgetButtonColor;
-  widgetHintColor.value = responseJSON.widgetHintColor;
-  widgetMessageColor.value = responseJSON.widgetMessageColor;
-};
-
-// const getMaxRequest = async () => {
-//   const response = await fetch("http://localhost:3000/getMaxRequest");
-//   const responseJSON = await response.json();
-//   console.log(responseJSON);
-//   maxRequest.value = responseJSON.maxRequest;
-// };
-
-// const getLimitTime = async () => {
-//   const response = await fetch("http://localhost:3000/getLimitTime");
-//   const responseJSON = await response.json();
-//   console.log(responseJSON);
-//   limitTime.value = responseJSON.limitTime;
-// };
-
-// const getRequestPreventMessage = async () => {
-//   const response = await fetch(
-//     "http://localhost:3000/getRequestPreventMessage"
-//   );
-//   const responseJSON = await response.json();
-//   console.log(responseJSON);
-//   requestPreventMessage.value = responseJSON.requestPreventMessage;
-// };
 
 const handleSubmit = async () => {
-  await submitAPIKey();
-  await submitTemperature();
-  await submitUserPrompt();
-  await submitLimiterConfig();
-  await submitWidgetConfig();
-  // await submitMaxRequest();
-  // await submitLimitTime();
-  // await submitRequestPreventMessage();
+  await updateUserConfig();
 };
 
-// get the API key after the DOM is updated
+// get the value after the DOM is updated
 onMounted(async () => {
-  await getAPIKey();
-  await getTemperature();
-  await getUserPrompt();
-  await getLimiterConfig();
-  await getWidgetConfig();
-  // await getMaxRequest();
-  // await getLimitTime();
-  // await getRequestPreventMessage();
+  const isUserConfigExist = await getUserConfig();
+  if (!isUserConfigExist) {
+    await setUserConfig();
+  }
 });
 
 // restrict the input to only numbers and decimals
