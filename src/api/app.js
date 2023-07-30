@@ -87,6 +87,7 @@ import { fileURLToPath } from "url";
 import mongoose from "mongoose";
 import { UserConfig } from "../db/userConfig.js";
 import { FileList } from "../db/fileList.js";
+import { UrlList } from "../db/urlList.js";
 
 dotenv.config({ path: "../../.env" });
 
@@ -596,6 +597,39 @@ app.get("/fileList/:userId", async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).send({ error: "Could not retrieve file list" });
+  }
+});
+
+app.post("/urlList", async (req, res) => {
+  const { userId, urls } = req.body;
+  try {
+    const urlList = await UrlList.findOneAndUpdate(
+      { userId },
+      { userId, urlList: urls },
+      { new: true, runValidators: true, upsert: true }
+    );
+    if (urlList) {
+      res.send(urlList);
+    } else {
+      res.status(404).send({ error: "Url list not found" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ error: "Could not update url list" });
+  }
+});
+
+app.get("/urlList/:userId", async (req, res) => {
+  try {
+    const urlList = await UrlList.findOne({ userId: req.params.userId });
+    if (urlList) {
+      res.send(urlList);
+    } else {
+      res.status(404).send({ error: "Url list not found" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ error: "Could not retrieve url list" });
   }
 });
 

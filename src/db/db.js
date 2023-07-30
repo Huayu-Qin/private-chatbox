@@ -23,3 +23,15 @@ fileListConnection.on(
 fileListConnection.once("open", function () {
   console.log("Connected to MongoDB:fileList");
 });
+
+export const urlListConnection = mongoose.createConnection(
+  "mongodb://localhost:27017/urlList",
+  { useNewUrlParser: true, useUnifiedTopology: true }
+);
+urlListConnection.on(
+  "error",
+  console.error.bind(console, "connecttion error:")
+);
+urlListConnection.once("open", function () {
+  console.log("Connected to MongoDB:urlList");
+});

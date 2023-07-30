@@ -1,5 +1,5 @@
 <script setup>
-import { ref, nextTick } from "vue";
+import { ref, nextTick, onMounted } from "vue";
 const newUrl = ref("");
 const urls = ref([]);
 const loading = ref(false);
@@ -36,6 +36,8 @@ const uploadUrl = async () => {
       urlPath: newUrl.value,
       urlName: responseJSON.urlName,
     });
+    // update the file list to the database
+    await updateUrlListDB();
     newUrl.value = "";
   } catch (error) {
     console.log(error);
@@ -54,9 +56,7 @@ const deleteUrl = async (urlName, userId) => {
       return;
     }
 
-    const url = new URL(
-      `http://localhost:3000/deleteUrl/${urlName}`
-    );
+    const url = new URL(`http://localhost:3000/deleteUrl/${urlName}`);
     // add userId to query params
     url.searchParams.append("userId", userId);
 
@@ -72,14 +72,63 @@ const deleteUrl = async (urlName, userId) => {
     const responseJSON = await response.json();
     console.log(responseJSON.message);
 
-    // remove the file from the array
-    urls.value = urls.value.filter(
-      (url) => url.urlName !== urlName
-    );
+    // remove the url from the array
+    urls.value = urls.value.filter((url) => url.urlName !== urlName);
+    // update the file list to the database
+    await updateUrlListDB();
   } catch (error) {
     console.log(error);
   }
 };
+
+const getUrlList = async () => {
+  try {
+    const response = await fetch(`http://localhost:3000/urlList/${userId}`);
+    const responseJSON = await response.json();
+    if (!response.ok) {
+      throw new Error(`Http error! status:${response.status}`);
+    }
+    console.log(responseJSON);
+    urls.value = responseJSON.urlList.map((url) => {
+      return {
+        urlPath: url.urlPath,
+        urlName: url.urlName,
+      };
+    });
+  } catch (error) {
+    console.log("ERROR:" + error);
+    return;
+  }
+};
+
+const updateUrlListDB = async () => {
+  try {
+    // save the file list to the database
+    const responseDB = await fetch("http://localhost:3000/urlList", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: userId,
+        urls: urls.value,
+      }),
+    });
+    if (!responseDB.ok) {
+      const errorBody = await responseDB.text();
+      console.log("Error response body :" + errorBody);
+      throw new Error("Failed to save file list");
+    }
+    const responseDBJSON = await responseDB.json();
+    console.log(responseDBJSON.urlList);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+onMounted(() => {
+  getUrlList();
+});
 
 // auto focus on the input field
 const vFocus = {
