@@ -341,7 +341,7 @@ app.post("/pdfUpload", multerPDF().single("file"), async (req, res) => {
 app.post("/urlUploadWindow", async (req, res) => {
   try {
     const { url, userId } = req.body;
-    const UniqueName = url.split(".")[1] + Date.now();
+    const UniqueName = url.split(".")[1].replace(/\//g, "_") + "_" + Date.now();
     await uploadURLWindow([url], UniqueName, userId);
 
     console.log("Upload finished");

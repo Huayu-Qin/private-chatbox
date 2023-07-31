@@ -23,15 +23,15 @@ const getCollection = async (collection) => {
     name: collection,
   });
 };
-// (async () => {
-//   await deleteCollection('123');
-//   const listOfCollections = await collections();
-//   console.log(listOfCollections);
-// })();
-
 (async () => {
-  const collection = await getCollection("123");
-  // const listOfCollections = await collections();
-  const listOfCollection = await collection.peek()
-  console.log(listOfCollection);
+  await deleteCollection('123');
+  const listOfCollections = await collections();
+  console.log(listOfCollections);
 })();
+
+// (async () => {
+//   const collection = await getCollection("123");
+//   // const listOfCollections = await collections();
+//   const listOfCollection = await collection.peek()
+//   console.log(listOfCollection);
+// })();
