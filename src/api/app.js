@@ -386,31 +386,38 @@ app.post("/pdfUploadWindow", multerPDF().single("file"), async (req, res) => {
   }
 });
 
-app.delete("/deleteFile/:fileName", (req, res) => {
-  const fileName = req.params.fileName;
-  // get the userId from the query
-  const userId = req.query.userId;
-  const filePath = path.join(
-    fileURLToPath(dirname(dirname(dirname(import.meta.url)))),
-    "/public/uploads/" + fileName
-  );
-  console.log(filePath);
-  if (fs.existsSync(filePath)) {
-    fs.unlink(filePath, (err) => {
-      if (err) {
-        console.log(err);
-        return res.status(500).json({ message: "Failed to delete the file" });
-      } else {
-        console.log("File deleted");
-        return res.status(200).json({ message: "File deleted" });
-      }
-    });
-  } else {
-    return res.status(404).json({ message: "File not found" });
-  }
+app.delete("/deleteFile/:fileName", async (req, res) => {
+  try {
+    const fileName = req.params.fileName;
+    // get the userId from the query
+    const userId = req.query.userId;
+    const filePath = path.join(
+      fileURLToPath(dirname(dirname(dirname(import.meta.url)))),
+      "/public/uploads/" + fileName
+    );
+    console.log(filePath);
+    if (fs.existsSync(filePath)) {
+      try {
+        await fs.promises.unlink(filePath);
 
-  // delete the file in the database
-  deleteDocument(userId, fileName);
+        console.log("File deleted");
+        // delete the file in the database
+        deleteDocument(userId, fileName);
+        return res
+          .status(200)
+          .json({ message: "File and its database record deleted" });
+      } catch (error) {
+        console.log(error);
+
+        return res.status(500).json({ message: "Failed to delete the file" });
+      }
+    } else {
+      return res.status(404).json({ message: "File not found" });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: error.message });
+  }
 });
 
 // app.post("/setApiKey", (req, res) => {
